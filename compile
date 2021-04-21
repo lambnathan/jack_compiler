@@ -1,0 +1,6 @@
+#!/bin/bash
+
+#simple compile script. removes objecet files after completion
+g++ -c *.cpp -std=c++17
+g++ -o vm_translator *.o
+rm *.o
