@@ -21,7 +21,6 @@ int main(int argc, char* argv[]){
     }
     
     vector<string> filenames;
-    string output_file_path; //this is based on the input, and will have a .xml extension for now
     string arg = argv[1];
     if(arg.find(".jack") != string::npos){
         //user entered a .jack filename instead of a directory
@@ -33,7 +32,6 @@ int main(int argc, char* argv[]){
         }
         fin.close();
         filenames.push_back(arg); //add to the collection of filenames
-        output_file_path = arg.substr(0, arg.find(".jack")) + ".xml";
     }
     else{
         //user entered a directory name, so get all .jack files inside
@@ -44,27 +42,26 @@ int main(int argc, char* argv[]){
         if(arg.find("/") != string::npos){ //if the argument has nested folders, get the last one
             last_dir = get_last_dir(arg);
         }
-        output_file_path = arg + "/" + last_dir + ".xml"; //is xml for now
-        cout << "output file path: " << output_file_path << endl;
-    }
 
-    for(const auto &entry: fs::directory_iterator(arg)){ //go through directory, get all filenames, add them to vector 
-        //cout << "file: " << entry.path() << endl;
-        string f_name = "";
-        for(char c: entry.path().string()){
-            if(c != '"'){
-                f_name += c;
+        for(const auto &entry: fs::directory_iterator(arg)){ //go through directory, get all filenames, add them to vector 
+            //cout << "file: " << entry.path() << endl;
+            string f_name = "";
+            for(char c: entry.path().string()){
+                if(c != '"'){
+                    f_name += c;
+                }
             }
+            if(f_name.find(".jack") == string::npos){ //skip non .jack files
+                continue;
+            }
+            filenames.push_back(f_name); //add to the list of filenames
         }
-        if(f_name.find(".jack") == string::npos){ //skip non .jack files
-            continue;
-        }
-        filenames.push_back(f_name); //add to the list of filenames
-        f_name = f_name.substr(f_name.find_last_of("/") + 1); //get only the filename, not path
     }
 
     //now go through each .jack file
-    
+    for(string name: filenames){
+        cout << name << endl;
+    }
 
     return 0;
 }
