@@ -1,11 +1,13 @@
 #include <regex>
 #include <iostream>
-#include <algorithm>
 
 #include "Scanner.h"
 
-string remove_whitespace(string str){
-    str.erase(remove(str.begin(), str.end(), ' '), str.end());
+string remove_leading_whitespace(string str){
+    if(str.length() > 1){
+        str = str.substr(str.find_first_not_of(' '));
+        return str;
+    }
     return str;
 }
 
@@ -22,7 +24,7 @@ Scanner::Scanner(ifstream &file){
         }
         contents += line;
     }
-    contents = remove_whitespace(contents);
+    contents = remove_leading_whitespace(contents);
 }
 
 /*
@@ -33,8 +35,8 @@ Scanner::Scanner(ifstream &file){
  * if it is a comment, advance and restart the loop until a valid token is found
  */
 Token Scanner::peek(){
+    cout << "current content: " << contents << endl;
     for(string reg: all_regexes){
-        cout << "testing pattern: " << reg << endl;
         regex pattern(reg);
         smatch m;
         regex_search(contents, m, pattern, regex_constants::match_continuous);
@@ -42,6 +44,7 @@ Token Scanner::peek(){
             if(reg == multiline_comment_pattern || reg == singleline_comment_pattern){
                 size_t pos = contents.find(m.str()) + m.str().length();
                 contents = contents.substr(pos); //cut out the comment
+                contents = remove_leading_whitespace(contents);
             }
             else if(reg == keyword_pattern){
                 Token t(keyword, m.str());
@@ -79,7 +82,9 @@ Token Scanner::next(){
     Token token = peek(); //use peek to get next token
     //advance past the found token
     size_t pos = contents.find(token.value) + token.value.length();
-    contents = contents.substr(pos); 
+    contents = contents.substr(pos);
+    contents = remove_leading_whitespace(contents); 
+
     return token;
 }
 
