@@ -17,12 +17,16 @@ string Token::to_string(){
     switch(type){
         case keyword:
             t = "keyword";
+            break;
         case symbol:
             t = "symbol";
+            break;
         case integer_constant:
             t = "integerConstant";
+            break;
         case string_constant:
             t = "stringConstant";
+            break;
         case identifier:
             t = "identifier";
     }

@@ -75,6 +75,7 @@ int main(int argc, char* argv[]){
         fin.close();
     }
 
+    cout << "Compilation successfully completed." << endl;
     return 0;
 }
 

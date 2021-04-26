@@ -52,6 +52,11 @@ Token Scanner::peek(){
                 return t;
             }
             else if(reg == integer_constant_pattern){
+                int i = stoi(m.str());
+                if(i > 32767){
+                    cerr << "Error. Integer constant exceeds maximum allowable value." << endl;
+                    exit(-1);
+                }
                 Token t(integer_constant, m.str());
                 return t;
             }
