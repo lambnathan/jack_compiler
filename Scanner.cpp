@@ -55,11 +55,6 @@ Token Scanner::peek(){
                 return t;
             }
             else if(reg == integer_constant_pattern){
-                int i = stoi(m.str());
-                if(i > 32767){
-                    cerr << "Error. Integer constant exceeds maximum allowable value." << endl;
-                    exit(-1);
-                }
                 Token t(integer_constant, m.str());
                 return t;
             }
@@ -77,9 +72,20 @@ Token Scanner::peek(){
 
 /*
  *gets the next token and advances
+ *this function also does some simple checking (e.g int constants < 32767)
+ *and makes sure keywords aren't found when they should be (e.g do in the word double)
  */
 Token Scanner::next(){
     Token token = peek(); //use peek to get next token
+    if(token.type == integer_constant){
+        int i = stoi(token.value);
+        if(i > 32767){
+            cerr << "Error. Integer constant exceeds maximum allowable value." << endl;
+            exit(-1);
+        }
+    }
+
+
     //advance past the found token
     size_t pos = contents.find(token.value) + token.value.length();
     contents = contents.substr(pos);

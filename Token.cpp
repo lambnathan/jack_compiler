@@ -30,6 +30,5 @@ string Token::to_string(){
         case identifier:
             t = "identifier";
     }
-
     return ("<" + t + ">" + " " + value + " " + "</" + t + ">");
 }
