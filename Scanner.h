@@ -10,7 +10,8 @@ using namespace std;
 
 class Scanner{
     public:
-        Scanner(ifstream &file);
+        Scanner();
+        void init(ifstream &file);
         Token peek();
         Token next();
         bool has_next();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <vector>
 #include <string>
 
@@ -12,6 +13,9 @@ class CompilationEngine{
 
     private:
         vector<string> filenames;
+        int indents = 0;
+        ofstream fout;
+        Scanner scanner;
 
         void compile_class();
         void compile_classVarDec();

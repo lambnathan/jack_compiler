@@ -12,10 +12,16 @@ string remove_leading_whitespace(string str){
 }
 
 /*
- * constructor. takes in a file stream and reads the file into a single string
+ * constructor.
+ */
+Scanner::Scanner(){}
+
+/* initialize the scanner. happens once for every jack file. 
+ * takes in a file stream and reads the file into a single string
  * while also filtering out single line comments
  */
-Scanner::Scanner(ifstream &file){
+void Scanner::init(ifstream &file){
+    contents = "";
     while(!file.eof()){
         string line;
         getline(file, line);
