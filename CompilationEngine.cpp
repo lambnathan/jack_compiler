@@ -220,14 +220,26 @@ void CompilationEngine::compile_subroutine(){
 
     Token open_symbol = scanner.next();
     if(open_symbol.value != "{"){
-        cerr << "Error. Opening curly brace expected for subroutine body." << endl;
+        cerr << "Error. Opening curly brace expected for subroutine body. (subroutine)" << endl;
         exit(-1);
     }
-    fout << ind << "<symbol> { </symbol>" << endl;
+    fout << ind << open_symbol.to_string() << endl;
     //now there should either be variable declartations, or statements
+    //TODO: a subroutine body must have a return, so need to loop until return is found
     if(scanner.peek().value == "var"){
         compile_varDec();
     }
+    //now there should be statements (i.e not an ending curly brace)
+    if(scanner.peek().value != "}"){
+        compile_statements();
+    }
+
+    Token closing_symbol = scanner.next();
+    if(closing_symbol.value != "}"){
+        cerr << "Error. Expected a closing curly brace after statements. (subroutine)" << endl;
+        exit(-1);
+    }
+    fout << ind << "<symbol> } </symbol>" << endl;
 
     indents--;
     ind = repeat("\t", indents);
@@ -302,9 +314,114 @@ void CompilationEngine::compile_varDec(){
         }
         fout << ind << "<identifier> " << nextvar.value << " </identifier>" << endl;
     }
-    fout << ind << "<symbol> ; </symbol>" << endl;
+    Token semicolon = scanner.next();
+    if(semicolon.value != ";"){
+        cerr << "Error. Expected a semicolon. (vardec)" << endl;
+        exit(-1);
+    }
+    fout << ind << semicolon.to_string() << endl;
 
     indents--;
     ind = repeat("\t", indents);
     fout << ind << "</varDec>" << endl;
+}
+
+//compiles a sequence of statements, not including the enclosing curly braces
+void CompilationEngine::compile_statements(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<statements>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
+
+    //figure out what kind of statement it is
+    Token statement_type = scanner.peek();
+    if(statement_type.value == "let"){
+        compile_letStatement();
+    }
+    else if(statement_type.value == "if"){
+
+    }
+    else if(statement_type.value == "while"){
+
+    }
+    else if(statement_type.value == "do"){
+
+    }
+    else if(statement_type.value == "return"){
+
+    }
+    else{
+        cerr << "Error. Unrecognized statement type. (statements)" << endl;
+        cout << "got: " << statement_type.value << endl;
+        exit(-1);
+    }
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</statements>" << endl;
+}
+
+//compiles a let statement
+void CompilationEngine::compile_letStatement(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<letStatement>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
+
+    //first token should be let
+    Token let_token = scanner.next();
+    fout << ind << let_token.to_string() << endl;
+    //next should be a varname
+    Token varname = scanner.next();
+    if(varname.type != identifier){
+        cerr << "Error. Expected a variable name (let statement)." << endl;
+        exit(-1); 
+    }
+    fout << ind << varname.to_string() << endl;
+    //what comes next is either an array expression or a normal expression
+    if(scanner.peek().value == "["){
+        //this is an array expression
+        Token open_square = scanner.next();
+        fout << ind << open_square.to_string() << endl;
+        compile_expression();
+        Token close_square = scanner.next();
+        if(close_square.value != "]"){
+            cerr << "Error. Expected a closing square bracket for array. (let statement)" << endl;
+            exit(-1);
+        }
+        fout << ind << close_square.to_string() << endl;
+    }
+    //then check for the equal sign
+    Token equ = scanner.next();
+    if(equ.value != "="){
+        cerr << "Error. Expected an equal sign for the expression. (let statement)" << endl;
+        exit(-1);
+    }
+    fout << ind << equ.to_string() << endl;
+    compile_expression();
+    Token semicolon = scanner.next();
+    if(semicolon.value != ";"){
+        cerr << "Error. Expected semicolon after expression. (let statement)" << endl;
+        exit(-1);
+    }
+    fout << ind << semicolon.to_string() << endl;
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</letStatement>" << endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+//compiles an expression
+void CompilationEngine::compile_expression(){
+
 }

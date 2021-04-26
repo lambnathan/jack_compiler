@@ -26,6 +26,11 @@ class CompilationEngine{
         void compile_parameterList();
         void compile_varDec();
         void compile_statements();
+        void compile_letStatement();
+        void compile_ifStatement();
+        void compile_whileStatement();
+        void compile_doStatement();
+        void compile_returnStatement();
         void compile_do();
         void compile_let();
         void compile_while();
@@ -33,6 +38,5 @@ class CompilationEngine{
         void compile_if();
         void compile_expression();
         void compile_term();
-
         void compile_type();
 };
