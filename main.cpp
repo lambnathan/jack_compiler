@@ -1,8 +1,8 @@
 #include <iostream>
-#include <vector>
-#include <string>
-#include <fstream>
 #include <filesystem>
+
+#include "Scanner.h"
+#include "Token.h"
 
 using namespace std;
 namespace fs = std::filesystem; //for reading all files in a directory
@@ -60,7 +60,19 @@ int main(int argc, char* argv[]){
 
     //now go through each .jack file
     for(string name: filenames){
-        cout << name << endl;
+        ifstream fin(name);
+        Scanner scanner(fin);
+
+        string outfile = name.substr(0, name.find(".jack")) + ".xml";
+        ofstream fout(outfile);
+
+        while(scanner.has_next()){
+            Token token = scanner.next();
+            fout << token.to_string() << endl;
+        }
+
+        fout.close();
+        fin.close();
     }
 
     return 0;

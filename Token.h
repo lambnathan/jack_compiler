@@ -2,12 +2,17 @@
 
 #include <string>
 
-enum token_type{keyword, symbol, integer_constant, string_constant, indentifier};
+using namespace std;
+
+enum token_type {keyword, symbol, integer_constant, string_constant, identifier};
 
 class Token{
     public:
         Token();
+        Token(token_type t, string val);
+        string to_string();
+
         token_type type;
-        std::string value;
+        string value;
     private:
 };
