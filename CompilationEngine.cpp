@@ -159,7 +159,7 @@ void CompilationEngine::compile_type(){
         fout << ind << "<keyword> " << typ.value << " </keyword>" << endl;
     }
     else if(typ.type == identifier){
-        fout << ind << "<identifier> " << typ.value << "< /identifier>" << endl;
+        fout << ind << "<identifier> " << typ.value << " </identifier>" << endl;
     }
 }
 
@@ -211,12 +211,100 @@ void CompilationEngine::compile_subroutineDec(){
     fout << ind << "</subroutineDec>" << endl;
 }
 
-//compiles a complete function, method, or constructor
+//compiles the body of a complete function, method, or constructor
 void CompilationEngine::compile_subroutine(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<subroutineBody>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
 
+    Token open_symbol = scanner.next();
+    if(open_symbol.value != "{"){
+        cerr << "Error. Opening curly brace expected for subroutine body." << endl;
+        exit(-1);
+    }
+    fout << ind << "<symbol> { </symbol>" << endl;
+    //now there should either be variable declartations, or statements
+    if(scanner.peek().value == "var"){
+        compile_varDec();
+    }
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</subroutineBody>" << endl;
 }
 
 //compiles a (possibly empty) parameter list (not inluding the parenthesis)
 void CompilationEngine::compile_parameterList(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<parameterList>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
 
+    //to get all parameters, loop until we find closing paranthesis
+    while(scanner.peek().value != ")"){
+        //next should be a type. 
+        compile_type();
+        Token varname = scanner.next();
+        if(varname.type != identifier){
+            cerr << "Error. Expected a variable name after type." << endl;
+            exit(-1);
+        }
+        fout << ind << "<identifier> " << varname.value << " </identifier>" << endl;
+        if(scanner.peek().value == ","){//there is more, so consume the comma
+            Token comma = scanner.next();
+            fout << ind << "<symbol> , </symbol>" << endl; 
+        }
+    }
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</parameterList>" << endl;
+}
+
+//compiles a variable declaration
+void CompilationEngine::compile_varDec(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<varDec>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
+
+    //first token should be var
+    Token var = scanner.next();
+    if(var.value != "var"){
+        cerr << "Error. Expected var keyword." << endl;
+        exit(-1);
+    }
+    fout << ind << "<keyword> var </keyword>" << endl;
+    //next comes the type of var
+    compile_type();
+    //next comes the varname
+    Token varname = scanner.next();
+    if(varname.type != identifier){
+        cerr << "Error. Expected an identifier after var keyword." << endl;
+        exit(-1);
+    }
+    fout << ind << "<identifier> " << varname.value << " </identifier>" << endl;
+    //if there is not a semi colon next, there are more variables being declared
+    while(scanner.peek().value != ";"){
+        //should be a comma sperating vars
+        Token comma = scanner.next();
+        if(comma.value != ","){
+            cerr << "Error. Expected a comma between variable declarations on same line." << endl;
+            exit(-1);
+        }
+        fout << ind << "<symbol> , </symbol>" << endl;
+        //now get next varname
+        Token nextvar = scanner.next();
+        if(nextvar.type != identifier){
+            cerr << "Error. Expected a variable name." << endl;
+            exit(-1);
+        }
+        fout << ind << "<identifier> " << nextvar.value << " </identifier>" << endl;
+    }
+    fout << ind << "<symbol> ; </symbol>" << endl;
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</varDec>" << endl;
 }
