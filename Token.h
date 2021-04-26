@@ -4,7 +4,7 @@
 
 using namespace std;
 
-enum token_type {keyword, symbol, integer_constant, string_constant, identifier};
+enum token_type {keyword, symbol, integer_constant, string_constant, identifier, null};
 
 class Token{
     public:

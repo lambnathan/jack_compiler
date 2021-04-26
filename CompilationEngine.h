@@ -4,11 +4,13 @@
 #include <vector>
 #include <string>
 
+#include "Scanner.h"
+
 using namespace std;
 
 class CompilationEngine{
     public:
-        CompilationEngine(vector<string> filenames);
+        CompilationEngine(vector<string> files);
         void compile();
 
     private:
@@ -30,4 +32,6 @@ class CompilationEngine{
         void compile_if();
         void compile_expression();
         void compile_term();
+
+        void compile_type();
 };

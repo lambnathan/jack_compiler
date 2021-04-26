@@ -11,6 +11,13 @@ string remove_leading_whitespace(string str){
     return str;
 }
 
+string remove_trailing_whitespace(string str){
+    if(str.length() > 1){
+        str.erase(str.find_last_not_of(' ') + 1, string::npos);
+    }
+    return str;
+}
+
 /*
  * constructor.
  */
@@ -25,12 +32,16 @@ void Scanner::init(ifstream &file){
     while(!file.eof()){
         string line;
         getline(file, line);
+        if(line.length() >= 2 && line[0] == '/' && line[1] == '/'){
+            continue;
+        }
         if(line.find("//")){
             line = line.substr(0, line.find("//"));
         }
         contents += line;
     }
     contents = remove_leading_whitespace(contents);
+    cout << "contents after init: " << contents << endl;
 }
 
 /*
@@ -41,7 +52,7 @@ void Scanner::init(ifstream &file){
  * if it is a comment, advance and restart the loop until a valid token is found
  */
 Token Scanner::peek(){
-    cout << "current content: " << contents << endl;
+    //cout << "current content: " << contents << endl;
     for(string reg: all_regexes){
         regex pattern(reg);
         smatch m;
@@ -53,7 +64,9 @@ Token Scanner::peek(){
                 contents = remove_leading_whitespace(contents);
             }
             else if(reg == keyword_pattern){
-                Token t(keyword, m.str());
+                //if its a keyword pattern, also have to remove trailing space
+                string val = remove_trailing_whitespace(m.str());
+                Token t(keyword, val);
                 return t;
             }
             else if(reg == symbol_pattern){
@@ -74,12 +87,12 @@ Token Scanner::peek(){
             }
         }
     }
+    return Token(null, "null"); 
 }
 
 /*
  *gets the next token and advances
  *this function also does some simple checking (e.g int constants < 32767)
- *and makes sure keywords aren't found when they should be (e.g do in the word double)
  */
 Token Scanner::next(){
     Token token = peek(); //use peek to get next token
@@ -90,7 +103,6 @@ Token Scanner::next(){
             exit(-1);
         }
     }
-
 
     //advance past the found token
     size_t pos = contents.find(token.value) + token.value.length();
