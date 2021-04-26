@@ -22,6 +22,7 @@ class CompilationEngine{
         void compile_class();
         void compile_classVarDec();
         void compile_subroutine();
+        void compile_subroutineDec();
         void compile_parameterList();
         void compile_varDec();
         void compile_statements();

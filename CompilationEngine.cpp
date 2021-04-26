@@ -51,7 +51,11 @@ void CompilationEngine::compile(){
     }
 }
 
-//compiles a complete class
+/* compiles a complete class
+ * starts with the class keyword, then calls classVarDec
+ * after class var dec, subroutine decs should come next
+ * this should end with a closing symbol
+ */
 void CompilationEngine::compile_class(){
     string ind = "";
     fout << "<class>" << endl;
@@ -75,19 +79,23 @@ void CompilationEngine::compile_class(){
         Token next_token = scanner.peek();
         if(next_token.value == "static" || next_token.value == "field"){
             compile_classVarDec();
-            Token closing_symbol = scanner.next();
-            if(closing_symbol.type != symbol){
-                cerr << "Error. Expected a closing symbol." << endl;
-                exit(-1);
-            }
-            fout << ind << "<symbol> " << closing_symbol.value << " </symbol>" << endl;
-            indents--;
-            fout << "</class>" << endl;
         }
         else{
             cerr << "Error. Expected \"static\" or \"field\" variable declarations." << endl;
             exit(-1);
         }
+
+        //get subroutine info
+        compile_subroutineDec();
+
+        Token closing_symbol = scanner.next();
+        if(closing_symbol.type != symbol){
+            cerr << "Error. Expected a closing symbol." << endl;
+            exit(-1);
+        }
+        fout << ind << "<symbol> " << closing_symbol.value << " </symbol>" << endl;
+        indents--;
+        fout << "</class>" << endl;
     }
     else{
         cerr << "Error. Expected an identifier after class." << endl;
@@ -153,4 +161,62 @@ void CompilationEngine::compile_type(){
     else if(typ.type == identifier){
         fout << ind << "<identifier> " << typ.value << "< /identifier>" << endl;
     }
+}
+
+//compiles the declaration for a subroutine
+void CompilationEngine::compile_subroutineDec(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<subroutineDec>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
+    //first make sure keyword is either function, method, or constructor
+    Token subtype = scanner.next();
+    if(subtype.value == "function" || subtype.value == "method" || subtype.value == "constructor"){
+        fout << ind << "<keyword> " << subtype.value << " </keyword>" << endl;
+        //next token should be a type keyword
+        compile_type();
+        //next should be an identifier
+        Token subname = scanner.next();
+        if(subname.type != identifier){
+            cerr << "Error. Expected an identifier after type." << endl;
+            exit(-1);
+        }
+        fout << ind << "<identifier> " << subname.value << " </identifier>" << endl;
+        Token open_symbol = scanner.next();
+        if(open_symbol.type != symbol){
+            cerr << "Error. Expected an open symbol after subroutine name." << endl;
+            exit(-1);
+        }
+        fout << ind << "<symbol> " << open_symbol.value << " </symbol>" << endl;
+        //now call code to compile parameter list (may not be any parameters)
+        compile_parameterList();
+
+        Token closing_symbol = scanner.next();
+        if(closing_symbol.type != symbol){
+            cerr << "Error. Expected a closing symbol after subroutine declaration." << endl;
+            exit(-1);
+        }
+        fout << ind << "<symbol> " << closing_symbol.value << " </symbol>" << endl;
+        //at end, call compile subroutine body function
+        compile_subroutine();
+    }
+    else{
+        cerr << "Error. Expected a keyword specifying the type of subroutine." << endl;
+        exit(-1);
+    }
+
+    //after subroutinedec recursion is done, close tag
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</subroutineDec>" << endl;
+}
+
+//compiles a complete function, method, or constructor
+void CompilationEngine::compile_subroutine(){
+
+}
+
+//compiles a (possibly empty) parameter list (not inluding the parenthesis)
+void CompilationEngine::compile_parameterList(){
+
 }
