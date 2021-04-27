@@ -115,6 +115,10 @@ Token Scanner::next(){
             exit(-1);
         }
     }
+    if(token.type == null){
+        cerr << "Error. Could not find a valid token type." << endl;
+        exit(-1);
+    }
 
     //advance past the found token
     size_t pos = contents.find(token.value) + token.value.length();

@@ -36,7 +36,7 @@ void CompilationEngine::compile(){
         //     fout << token.to_string() << endl;
         // }
         if(scanner.has_next()){
-            Token token = scanner.next();
+            Token token = scanner.peek();
             if(token.value != "class"){
                 cerr << "Error. First token in a jack file must be a class declaration." << endl;
                 cout << "actual was: " << token.value << endl;
@@ -61,46 +61,34 @@ void CompilationEngine::compile_class(){
     fout << "<class>" << endl;
     indents++;
     ind = repeat("\t", indents);
+
+    Token class_token = scanner.next();
     fout << ind << "<keyword> class </keyword>" << endl; 
-    if(scanner.has_next()){
-        //next should be an identifier
-        Token id = scanner.next();
-        if(id.type != identifier){
-            cerr << "Error. Expected an identifier after class." << endl;
-            exit(-1);
-        }
-        fout << ind << "<identifier> " << id.value << " </identifier>" << endl;
-        Token open_symbol = scanner.next();
-        if(open_symbol.type != symbol){
-            cerr << "Error. Expected a symbol after class name." << endl;
-            exit(-1);
-        }
-        fout << ind << "<symbol> " << open_symbol.value << " </symbol>" << endl;
-        Token next_token = scanner.peek();
-        if(next_token.value == "static" || next_token.value == "field"){
-            compile_classVarDec();
-        }
-        else{
-            cerr << "Error. Expected \"static\" or \"field\" variable declarations." << endl;
-            exit(-1);
-        }
-
-        //get subroutine info
-        compile_subroutineDec();
-
-        Token closing_symbol = scanner.next();
-        if(closing_symbol.type != symbol){
-            cerr << "Error. Expected a closing symbol." << endl;
-            exit(-1);
-        }
-        fout << ind << "<symbol> " << closing_symbol.value << " </symbol>" << endl;
-        indents--;
-        fout << "</class>" << endl;
-    }
-    else{
-        cerr << "Error. Expected an identifier after class." << endl;
+    Token class_name = scanner.next();
+    if(class_name.type != identifier){
+        cerr << "Error. Expected a class name. (class)" << endl;
         exit(-1);
     }
+    fout << ind << class_name.to_string() << endl;
+    Token open_brace = scanner.next();
+    if(open_brace.value != "{"){
+        cerr << "Error. Expected an open brace after class name. (class)" << endl;
+        exit(-1);
+    }
+    fout << ind << open_brace.to_string() << endl;
+    while(scanner.peek().value != "}"){ //loop until end of class declaration
+        Token what_dec = scanner.peek();
+        if(what_dec.value == "static" || what_dec.value == "field"){ //
+            compile_classVarDec();
+        }
+        else if(what_dec.value == "constructor" || what_dec.value == "method" || what_dec.value == "function"){
+            compile_subroutineDec();
+        }
+    }
+    Token closing_brace = scanner.next();
+    fout << ind << closing_brace.to_string() << endl;
+    indents--;
+    fout << "</class>" << endl;
 }
 
 //compiles class variable declariations
@@ -109,43 +97,33 @@ void CompilationEngine::compile_classVarDec(){
     fout << ind << "<classVarDec>" << endl;
     indents++;
     ind = repeat("\t", indents);
+
     Token static_or_field = scanner.next();
-    if(static_or_field.value == "static"){
-        fout << ind << "<keyword> static </keyword>" << endl;
-    }
-    else if(static_or_field.value == "field"){
-        fout << ind << "<keyword> field </keyword>" << endl;
-    }
-    else{
-        cerr << "Error. Expected \"static\" or \"field\" variable declarations." << endl;
-        exit(-1);
-    }
+    fout << ind << static_or_field.to_string() << endl;
     compile_type();
 
     //now must see at least one identifier for varname
-    Token i = scanner.next();
-    if(i.type != identifier){
-        cerr << "Error. Expecting an identifier." << endl;
+    Token varname = scanner.next();
+    if(varname.type != identifier){
+        cerr << "Error. Expecting an identifier. (classVarDec)" << endl;
         exit(-1);
     }
-    fout << ind << "<identifier> " << i.value << " </identifier>" << endl;
+    fout << ind << varname.to_string() << endl;
 
     //now loop, outputting comma symbols and additional identifiers until able to output semicolon
     while(scanner.peek().value != ";"){
-        Token symbol_or_ident = scanner.next();
-        if(symbol_or_ident.value == ","){
-            fout << ind << "<symbol> , </symbol>" << endl;
+        Token comma = scanner.next();
+        if(comma.value != ","){
+            cerr << "Error. Expected a comma for more variables. (classVarDec)" << endl;
+            exit(-1);
         }
-        else if(symbol_or_ident.type == identifier){
-            fout << ind << "<identifier> " << symbol_or_ident.value << " </identifier>" << endl;
-        }
+        fout << ind << comma.to_string() << endl;
+        Token next_var_name = scanner.next();
+        fout << ind << next_var_name.to_string() << endl;
     }
     Token semicolon = scanner.next();
-    if(semicolon.value != ";"){
-        cerr << "Error. Expected a semicolon afer class variable declarations." << endl;
-        exit(-1);
-    }
-    fout << ind << "<symbol> ; </symbol>" << endl;
+    fout << ind << semicolon.to_string() << endl;
+
     indents--;
     ind = repeat("\t", indents);
     fout << ind << "</classVarDec>" << endl;
@@ -155,12 +133,13 @@ void CompilationEngine::compile_classVarDec(){
 void CompilationEngine::compile_type(){
     string ind = repeat("\t", indents);
     Token typ = scanner.next();
-    if(typ.value == "int" || typ.value == "char" || typ.value == "boolean" || typ.value == "void"){
-        fout << ind << "<keyword> " << typ.value << " </keyword>" << endl;
-    }
-    else if(typ.type == identifier){
-        fout << ind << "<identifier> " << typ.value << " </identifier>" << endl;
-    }
+    fout << ind << typ.to_string() << endl;
+    // if(typ.value == "int" || typ.value == "char" || typ.value == "boolean" || typ.value == "void"){
+    //     fout << ind << "<keyword> " << typ.value << " </keyword>" << endl;
+    // }
+    // else if(typ.type == identifier){
+    //     fout << ind << "<identifier> " << typ.value << " </identifier>" << endl;
+    // }
 }
 
 //compiles the declaration for a subroutine
@@ -169,6 +148,7 @@ void CompilationEngine::compile_subroutineDec(){
     fout << ind << "<subroutineDec>" << endl;
     indents++;
     ind = repeat("\t", indents);
+
     //first make sure keyword is either function, method, or constructor
     Token subtype = scanner.next();
     if(subtype.value == "function" || subtype.value == "method" || subtype.value == "constructor"){
@@ -178,25 +158,25 @@ void CompilationEngine::compile_subroutineDec(){
         //next should be an identifier
         Token subname = scanner.next();
         if(subname.type != identifier){
-            cerr << "Error. Expected an identifier after type." << endl;
+            cerr << "Error. Expected an identifier after type. (subroutineDec)" << endl;
             exit(-1);
         }
-        fout << ind << "<identifier> " << subname.value << " </identifier>" << endl;
+        fout << ind << subname.to_string() << endl;
         Token open_symbol = scanner.next();
-        if(open_symbol.type != symbol){
-            cerr << "Error. Expected an open symbol after subroutine name." << endl;
+        if(open_symbol.value != "("){
+            cerr << "Error. Expected an open symbol after subroutine name. (subroutineDec)" << endl;
             exit(-1);
         }
-        fout << ind << "<symbol> " << open_symbol.value << " </symbol>" << endl;
+        fout << ind << open_symbol.to_string() << endl;
         //now call code to compile parameter list (may not be any parameters)
         compile_parameterList();
 
         Token closing_symbol = scanner.next();
-        if(closing_symbol.type != symbol){
-            cerr << "Error. Expected a closing symbol after subroutine declaration." << endl;
+        if(closing_symbol.value != ")"){
+            cerr << "Error. Expected a closing symbol after subroutine declaration. (subroutineDec)" << endl;
             exit(-1);
         }
-        fout << ind << "<symbol> " << closing_symbol.value << " </symbol>" << endl;
+        fout << ind << closing_symbol.to_string() << endl;
         //at end, call compile subroutine body function
         compile_subroutine();
     }
@@ -225,13 +205,15 @@ void CompilationEngine::compile_subroutine(){
     }
     fout << ind << open_symbol.to_string() << endl;
     //now there should either be variable declartations, or statements
-    //TODO: loop until the next closing curly brace is found
-    if(scanner.peek().value == "var"){
-        compile_varDec();
-    }
-    //now there should be statements (i.e not an ending curly brace)
-    if(scanner.peek().value != "}"){
-        compile_statements();
+    //loop until the next closing curly brace is found
+    while(scanner.peek().value != "}"){
+        Token next_kwd = scanner.peek();
+        if(next_kwd.value == "var"){
+            compile_varDec();
+        }
+        else{
+            compile_statements();
+        }
     }
 
     Token closing_symbol = scanner.next();
@@ -239,7 +221,7 @@ void CompilationEngine::compile_subroutine(){
         cerr << "Error. Expected a closing curly brace after statements. (subroutine)" << endl;
         exit(-1);
     }
-    fout << ind << "<symbol> } </symbol>" << endl;
+    fout << ind << closing_symbol.to_string() << endl;
 
     indents--;
     ind = repeat("\t", indents);
@@ -629,7 +611,7 @@ void CompilationEngine::compile_term(){
     string unaryops = "~-"; //string holding the possible unary operators
 
     Token term = scanner.peek();
-    if(term.type == integer_constant || term.type == string_constant){
+    if(term.type == integer_constant || term.type == string_constant || term.type == keyword){
         term = scanner.next();
         fout << ind << term.to_string() << endl;
     }
