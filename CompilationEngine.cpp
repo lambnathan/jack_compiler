@@ -44,6 +44,10 @@ void CompilationEngine::compile(){
             }
             compile_class();
         }
+        else{
+            cerr << "No tokens recieved." << endl;
+            exit(-1);
+        }
 
         fout.close();
         fin.close();

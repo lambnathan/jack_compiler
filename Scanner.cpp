@@ -38,6 +38,9 @@ void Scanner::init(ifstream &file){
         if(line.find("//")){
             line = line.substr(0, line.find("//"));
         }
+        if(line[line.length() - 1] == '\r'){
+            line = line.substr(0, line.length() - 1);
+        }
         contents += line;
     }
     contents = remove_leading_whitespace(contents);
