@@ -342,17 +342,16 @@ void CompilationEngine::compile_statements(){
         compile_ifStatement();
     }
     else if(statement_type.value == "while"){
-
+        compile_whileStatement();
     }
     else if(statement_type.value == "do"){
-
+        compile_doStatement();
     }
     else if(statement_type.value == "return"){
-
+        compile_returnStatement();
     }
     else{
         cerr << "Error. Unrecognized statement type. (statements)" << endl;
-        cout << "got: " << statement_type.value << endl;
         exit(-1);
     }
 
@@ -478,8 +477,99 @@ void CompilationEngine::compile_ifStatement(){
     fout << ind << "</ifStatement>" << endl; 
 }
 
+//compiles a while statement
+void CompilationEngine::compile_whileStatement(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<whileStatement>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
 
+    Token whilet = scanner.next();
+    fout << ind << whilet.to_string() << endl;
+    Token open_par = scanner.next();
+    if(open_par.value != "("){
+        cerr << "Error. Expected opening parenthesis for while statement. (whileStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << open_par.to_string() << endl;
+    //now there should be an expression
+    compile_expression();
+    Token closing_par = scanner.next();
+    if(closing_par.value != ")"){
+        cerr << "Error. Expected a closing parenthesis for while statement. (whileStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << closing_par.to_string() << endl;
+    //now get brackets and statements
+    Token open_braces = scanner.next();
+    if(open_braces.value != "{"){
+        cerr << "Error. Expected open curly braces. (whileStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << open_braces.to_string() << endl;
+    //statements are insdie curly braces
+    compile_statements();
+    Token closing_braces = scanner.next();
+    if(closing_braces.value != "}"){
+        cerr << "Error. Expected closing braces. (whileStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << closing_braces.to_string() << endl;
 
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</whileStatement>" << endl;
+}
+
+//compiles a return statement
+void CompilationEngine::compile_returnStatement(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<returnStatement>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
+
+    Token returnt = scanner.next();
+    fout << ind << returnt.to_string() << endl;
+    if(scanner.peek().value != ";"){
+        compile_expression();
+    }
+    Token semicolon = scanner.next();
+    if(semicolon.value != ";"){
+        cerr << "Error. Expected a semi colon on return statement (returnStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << semicolon.to_string() << endl;
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</returnStatement>" << endl;
+}
+
+//compiles a do statement
+void CompilationEngine::compile_doStatement(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<doStatement>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
+
+    Token dot = scanner.next();
+    fout << ind << dot.to_string() << endl;
+    if(scanner.peek().value == ";"){
+        cerr << "Error. Expected a subroutine call after do statement. (doStatement)" << endl;
+        exit(-1);
+    }
+    compile_subroutineCall();
+    Token semicolon = scanner.next();
+    if(semicolon.value != ";"){
+        cerr << "Error. Expected a semi colon on do statement (doStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << semicolon.to_string() << endl;
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</doStatement>" << endl;
+}
 
 
 

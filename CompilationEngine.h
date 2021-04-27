@@ -19,6 +19,11 @@ class CompilationEngine{
         ofstream fout;
         Scanner scanner;
 
+        //helper functions to write opening and closing xml tags
+        void write_open_tag(string val);
+        void write_close_tag(string val);
+
+        //recursive compile functions
         void compile_class();
         void compile_classVarDec();
         void compile_subroutine();
@@ -31,11 +36,6 @@ class CompilationEngine{
         void compile_whileStatement();
         void compile_doStatement();
         void compile_returnStatement();
-        void compile_do();
-        void compile_let();
-        void compile_while();
-        void compile_return();
-        void compile_if();
         void compile_expression();
         void compile_expressionList();
         void compile_term();
