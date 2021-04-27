@@ -37,6 +37,8 @@ class CompilationEngine{
         void compile_return();
         void compile_if();
         void compile_expression();
+        void compile_expressionList();
         void compile_term();
         void compile_type();
+        void compile_subroutineCall();
 };

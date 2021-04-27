@@ -13,6 +13,7 @@ class Scanner{
         Scanner();
         void init(ifstream &file);
         Token peek();
+        Token peek_two(); //special peek function, used only by CompilationEngine::compile_term()
         Token next();
         bool has_next();
 

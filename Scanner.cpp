@@ -91,6 +91,18 @@ Token Scanner::peek(){
 }
 
 /*
+ *special peek function, used only by CompilationEngine::compile_term()
+ * peeks two tokens ahead instead of just one
+ */
+Token Scanner::peek_two(){
+    string backup_contents = contents;
+    Token not_needed = next();
+    Token actual = next();
+    contents = backup_contents; //restore contents back to their original
+    return actual;
+}
+
+/*
  *gets the next token and advances
  *this function also does some simple checking (e.g int constants < 32767)
  */

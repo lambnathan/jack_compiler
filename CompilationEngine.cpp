@@ -225,7 +225,7 @@ void CompilationEngine::compile_subroutine(){
     }
     fout << ind << open_symbol.to_string() << endl;
     //now there should either be variable declartations, or statements
-    //TODO: a subroutine body must have a return, so need to loop until return is found
+    //TODO: loop until the next closing curly brace is found
     if(scanner.peek().value == "var"){
         compile_varDec();
     }
@@ -418,10 +418,120 @@ void CompilationEngine::compile_letStatement(){
 
 
 
+//compiles a (possibly empty) expression list
+void CompilationEngine::compile_expressionList(){
 
+}
 
 
 //compiles an expression
 void CompilationEngine::compile_expression(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<expression>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
 
+    //expressions are composed of terms.
+    compile_term();
+    string ops = "+-/*=><&|"; //string containing the possible binary operators
+    //while there is still a binary op, the expression continues
+    while(ops.find(scanner.peek().value) != string::npos){
+        Token bop = scanner.next();
+        fout << ind << bop.to_string() << endl;
+        compile_term();
+    }
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</expression>" << endl;
+}
+
+/*
+ * compiles a term
+ */
+void CompilationEngine::compile_term(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<term>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
+
+    string unaryops = "~-"; //string holding the possible unary operators
+
+    Token term = scanner.peek();
+    if(term.type == integer_constant || term.type == string_constant){
+        term = scanner.next();
+        fout << ind << term.to_string() << endl;
+    }
+    else if(unaryops.find(term.value) != string::npos){
+        term = scanner.next();
+        fout << ind << term.to_string() << endl;
+        compile_term();
+    }
+    else if(term.type == identifier){ //could either be array indexing, a subroutine call (different forms), or just an identifier
+        if(scanner.peek_two().value == "["){
+            //array indexing situation
+            Token open_symbol = scanner.next();
+            open_symbol = scanner.next(); //need to consume two
+            fout << ind << open_symbol.to_string() << endl;
+            //now parse an expression
+            compile_expression();
+            Token close_symbol = scanner.next();
+            if(close_symbol.value != "]"){
+                cerr << "Error. Expected a closing square bracket. (term)" << endl;
+                exit(-1);
+            }
+            fout << ind << close_symbol.to_string() << endl;
+        }
+        else if(scanner.peek_two().value == "(" || scanner.peek_two().value == "."){
+            //subroutine call 
+            compile_subroutineCall();
+        }
+    }
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</term>" << endl;
+}
+
+//compiles a subroutine call
+//no actual xml tags for this
+void CompilationEngine::compile_subroutineCall(){
+    string ind = repeat("\t", indents);
+
+    Token name = scanner.next();
+    if(name.type != identifier){
+        cerr << "Error. Expected an identifier for the subroutine. (subroutine_call)" << endl;
+        exit(-1);
+    }
+    fout << ind << name.to_string() << endl;
+    if(scanner.peek().value == "("){
+        Token open_symbol = scanner.next();
+        fout << ind << open_symbol.to_string() << endl;
+        compile_expressionList();
+        Token closing_symbol = scanner.next();
+        if(closing_symbol.value != ")"){
+            cerr << "Error. Expected a closing parenthesis. (subroutine_call)" << endl;
+            exit(-1);
+        }
+        fout << ind << closing_symbol.to_string() << endl;
+    }
+    else if(scanner.peek().value == "."){
+        Token dot = scanner.next();
+        fout << ind << dot.to_string() << endl;
+        name = scanner.next();
+        if(name.type != identifier){
+            cerr << "Error. Expected an identifier for subroutine name. (subroutine_call)" << endl;
+            exit(-1);
+        }
+        fout << ind << name.to_string() << endl;
+        Token open_symbol = scanner.next();
+        fout << ind << open_symbol.to_string() << endl;
+        compile_expressionList();
+        Token closing_symbol = scanner.next();
+        if(closing_symbol.value != ")"){
+            cerr << "Error. Expected a closing parenthesis. (subroutine_call)" << endl;
+            exit(-1);
+        }
+        fout << ind << closing_symbol.to_string() << endl;
+    }
 }
