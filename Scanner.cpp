@@ -41,7 +41,7 @@ void Scanner::init(ifstream &file){
         contents += line;
     }
     contents = remove_leading_whitespace(contents);
-    cout << "contents after init: " << contents << endl;
+    //cout << "contents after init: " << contents << endl;
 }
 
 /*

@@ -339,7 +339,7 @@ void CompilationEngine::compile_statements(){
         compile_letStatement();
     }
     else if(statement_type.value == "if"){
-
+        compile_ifStatement();
     }
     else if(statement_type.value == "while"){
 
@@ -411,7 +411,72 @@ void CompilationEngine::compile_letStatement(){
     fout << ind << "</letStatement>" << endl;
 }
 
+//compiles an if statement
+void CompilationEngine::compile_ifStatement(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<ifStatement>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
+    //get if token
+    Token iif = scanner.next();
+    if(iif.value != "if"){
+        cerr << "Error. Expected if keyword. (ifStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << iif.to_string() << endl;
+    Token open_par = scanner.next();
+    if(open_par.value != "("){
+        cerr << "Error. Expected opening parenthesis for if statement. (ifStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << open_par.to_string() << endl;
+    //now there should be an expression
+    compile_expression();
+    Token closing_par = scanner.next();
+    if(closing_par.value != ")"){
+        cerr << "Error. Expected a closing parenthesis for if statement. (ifStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << closing_par.to_string() << endl;
+    //now get brackets and statements
+    Token open_braces = scanner.next();
+    if(open_braces.value != "{"){
+        cerr << "Error. Expected open curly braces. (ifStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << open_braces.to_string() << endl;
+    //statements are insdie curly braces
+    compile_statements();
+    Token closing_braces = scanner.next();
+    if(closing_braces.value != "}"){
+        cerr << "Error. Expected closing braces. (ifStatement)" << endl;
+        exit(-1);
+    }
+    fout << ind << closing_braces.to_string() << endl;
+    //now there may or may not be an else branch
+    if(scanner.peek().value == "else"){
+        Token elset = scanner.next();
+        fout << ind << elset.to_string() << endl;
+        open_braces = scanner.next();
+        if(open_braces.value != "{"){
+            cerr << "Error. Expected open curly braces. (ifStatement)" << endl;
+            exit(-1);
+        }
+        fout << ind << open_braces.to_string() << endl;
+        //statements are insdie curly braces
+        compile_statements();
+        closing_braces = scanner.next();
+        if(closing_braces.value != "}"){
+            cerr << "Error. Expected closing braces. (ifStatement)" << endl;
+            exit(-1);
+        }
+        fout << ind << closing_braces.to_string() << endl;
+    }
 
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</ifStatement>" << endl; 
+}
 
 
 
