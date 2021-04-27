@@ -14,12 +14,16 @@ Token::Token(token_type t, string val){
  */
 string Token::to_string(){
     string t;
+    string val = value;
     switch(type){
         case keyword:
             t = "keyword";
             break;
         case symbol:
             t = "symbol";
+            if(value == "&") {val = "&amp;";}
+            if(value == "<") {val = "&lt;";}
+            if(value == ">") {val = "&gt;";}
             break;
         case integer_constant:
             t = "integerConstant";
@@ -30,5 +34,5 @@ string Token::to_string(){
         case identifier:
             t = "identifier";
     }
-    return ("<" + t + ">" + " " + value + " " + "</" + t + ">");
+    return ("<" + t + ">" + " " + val + " " + "</" + t + ">");
 }

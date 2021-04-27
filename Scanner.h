@@ -20,9 +20,9 @@ class Scanner{
 
     private:
         //regular expressions
-        string multiline_comment_pattern = R"(/\*.*\*/)";
+        string multiline_comment_pattern = R"(/\*.*?\*/)"; //nongreedy
         string singleline_comment_pattern = R"(//.*)";
-        string keyword_pattern = "(class |constructor |function |method |field |static |var |int |char |boolean |void |true |false |null |this |let |do |if |else |while |return )";
+        string keyword_pattern = "(class *|constructor *|function *|method *|field *|static *|var *|int *|char *|boolean *|void *|true *|false *|null *|this *|let *|do *|if *|else *|while *|return *)";
         string symbol_pattern = R"((\{|\}|\(|\)|\[|\]|\.|,|;|\+|-|\*|/|&|\||<|>|=|~))";
         string integer_constant_pattern = "([0-9]+)";
         string string_constant_pattern = R"(".*")";

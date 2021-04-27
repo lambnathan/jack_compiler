@@ -62,6 +62,7 @@ Token Scanner::peek(){
                 size_t pos = contents.find(m.str()) + m.str().length();
                 contents = contents.substr(pos); //cut out the comment
                 contents = remove_leading_whitespace(contents);
+                return peek();
             }
             else if(reg == keyword_pattern){
                 //if its a keyword pattern, also have to remove trailing space

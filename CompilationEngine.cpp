@@ -315,26 +315,28 @@ void CompilationEngine::compile_statements(){
     indents++;
     ind = repeat("\t", indents);
 
-    //figure out what kind of statement it is
-    Token statement_type = scanner.peek();
-    if(statement_type.value == "let"){
-        compile_letStatement();
-    }
-    else if(statement_type.value == "if"){
-        compile_ifStatement();
-    }
-    else if(statement_type.value == "while"){
-        compile_whileStatement();
-    }
-    else if(statement_type.value == "do"){
-        compile_doStatement();
-    }
-    else if(statement_type.value == "return"){
-        compile_returnStatement();
-    }
-    else{
-        cerr << "Error. Unrecognized statement type. (statements)" << endl;
-        exit(-1);
+    //loop over all statements
+    while(scanner.peek().value == "let" || scanner.peek().value == "if" || scanner.peek().value == "while" || scanner.peek().value == "do" || scanner.peek().value == "return"){
+        Token statement_type = scanner.peek();
+        if(statement_type.value == "let"){
+            compile_letStatement();
+        }
+        else if(statement_type.value == "if"){
+            compile_ifStatement();
+        }
+        else if(statement_type.value == "while"){
+            compile_whileStatement();
+        }
+        else if(statement_type.value == "do"){
+            compile_doStatement();
+        }
+        else if(statement_type.value == "return"){
+            compile_returnStatement();
+        }
+        else{
+            cerr << "Error. Unrecognized statement type. (statements)" << endl;
+            exit(-1);
+        }
     }
 
     indents--;
@@ -623,6 +625,7 @@ void CompilationEngine::compile_term(){
     else if(term.type == identifier){ //could either be array indexing, a subroutine call (different forms), or just an identifier
         if(scanner.peek_two().value == "["){
             //array indexing situation
+            fout << ind << term.to_string() << endl;
             Token open_symbol = scanner.next();
             open_symbol = scanner.next(); //need to consume two
             fout << ind << open_symbol.to_string() << endl;
@@ -639,6 +642,22 @@ void CompilationEngine::compile_term(){
             //subroutine call 
             compile_subroutineCall();
         }
+        else{
+            //just a normal identifier
+            term = scanner.next();
+            fout << ind << term.to_string() << endl;
+        }
+    }
+    else if(term.type == symbol && term.value == "("){ //is an expression
+        Token open_par = scanner.next();
+        fout << ind << open_par.to_string() << endl;
+        compile_expression();
+        Token closing_par = scanner.next();
+        if(closing_par.value != ")"){
+            cerr << "Error. Expected a closing parenthesis. (term)" << endl;
+            exit(-1);
+        }
+        fout << ind << closing_par.to_string() << endl;
     }
 
     indents--;
