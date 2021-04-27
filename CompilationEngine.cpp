@@ -420,7 +420,23 @@ void CompilationEngine::compile_letStatement(){
 
 //compiles a (possibly empty) expression list
 void CompilationEngine::compile_expressionList(){
+    string ind = repeat("\t", indents);
+    fout << ind << "<expressionList>" << endl;
+    indents++;
+    ind = repeat("\t", indents);
 
+    if(scanner.peek().value != ")"){ //expressionlist is not empty
+        compile_expression();
+        while(scanner.peek().value == ","){
+            Token comma = scanner.next();
+            fout << ind << comma.to_string() << endl;
+            compile_expression();
+        }
+    }
+
+    indents--;
+    ind = repeat("\t", indents);
+    fout << ind << "</expressionList>" << endl;
 }
 
 
