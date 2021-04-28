@@ -22,6 +22,20 @@ CompilationEngine::CompilationEngine(vector<string> files){
     filenames = files;
 }
 
+//helper function to write xml open tag and handle increasing indents
+void CompilationEngine::write_open_tag(string val){
+    fout << ind << "<" << val << ">" << endl;
+    indents++;
+    ind = repeat(space_char, indents);
+}
+
+//helper functino to write closing xml tag and decrease indent
+void CompilationEngine::write_close_tag(string val){
+    indents--;
+    ind = repeat(space_char, indents);
+    fout << ind << "</" << val << ">" << endl;
+}
+
 void CompilationEngine::compile(){
     // go through each .jack file
     for(string name: filenames){
@@ -31,10 +45,6 @@ void CompilationEngine::compile(){
         string outfile = name.substr(0, name.find(".jack")) + ".xml";
         fout.open(outfile);
 
-        // while(scanner.has_next()){
-        //     Token token = scanner.next();
-        //     fout << token.to_string() << endl;
-        // }
         if(scanner.has_next()){
             Token token = scanner.peek();
             if(token.value != "class"){
@@ -45,7 +55,7 @@ void CompilationEngine::compile(){
             compile_class();
         }
         else{
-            cerr << "No tokens recieved." << endl;
+            cerr << "Error. No tokens recieved." << endl;
             exit(-1);
         }
 
@@ -61,13 +71,10 @@ void CompilationEngine::compile(){
  * this should end with a closing symbol
  */
 void CompilationEngine::compile_class(){
-    string ind = "";
-    fout << "<class>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("class");
 
     Token class_token = scanner.next();
-    fout << ind << "<keyword> class </keyword>" << endl; 
+    fout << ind << class_token.to_string() << endl; 
     Token class_name = scanner.next();
     if(class_name.type != identifier){
         cerr << "Error. Expected a class name. (class)" << endl;
@@ -91,16 +98,12 @@ void CompilationEngine::compile_class(){
     }
     Token closing_brace = scanner.next();
     fout << ind << closing_brace.to_string() << endl;
-    indents--;
     fout << "</class>" << endl;
 }
 
 //compiles class variable declariations
 void CompilationEngine::compile_classVarDec(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<classVarDec>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("classVarDec");
 
     Token static_or_field = scanner.next();
     fout << ind << static_or_field.to_string() << endl;
@@ -128,30 +131,18 @@ void CompilationEngine::compile_classVarDec(){
     Token semicolon = scanner.next();
     fout << ind << semicolon.to_string() << endl;
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</classVarDec>" << endl;
+    write_close_tag("classVarDec");
 }
 
 //handles different types
 void CompilationEngine::compile_type(){
-    string ind = repeat("\t", indents);
     Token typ = scanner.next();
     fout << ind << typ.to_string() << endl;
-    // if(typ.value == "int" || typ.value == "char" || typ.value == "boolean" || typ.value == "void"){
-    //     fout << ind << "<keyword> " << typ.value << " </keyword>" << endl;
-    // }
-    // else if(typ.type == identifier){
-    //     fout << ind << "<identifier> " << typ.value << " </identifier>" << endl;
-    // }
 }
 
 //compiles the declaration for a subroutine
 void CompilationEngine::compile_subroutineDec(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<subroutineDec>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("subroutineDec");
 
     //first make sure keyword is either function, method, or constructor
     Token subtype = scanner.next();
@@ -190,17 +181,12 @@ void CompilationEngine::compile_subroutineDec(){
     }
 
     //after subroutinedec recursion is done, close tag
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</subroutineDec>" << endl;
+    write_close_tag("subroutineDec");
 }
 
 //compiles the body of a complete function, method, or constructor
 void CompilationEngine::compile_subroutine(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<subroutineBody>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("subroutineBody");
 
     Token open_symbol = scanner.next();
     if(open_symbol.value != "{"){
@@ -227,17 +213,12 @@ void CompilationEngine::compile_subroutine(){
     }
     fout << ind << closing_symbol.to_string() << endl;
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</subroutineBody>" << endl;
+    write_close_tag("subroutineBody");
 }
 
 //compiles a (possibly empty) parameter list (not inluding the parenthesis)
 void CompilationEngine::compile_parameterList(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<parameterList>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("parameterList");
 
     //to get all parameters, loop until we find closing paranthesis
     while(scanner.peek().value != ")"){
@@ -255,17 +236,12 @@ void CompilationEngine::compile_parameterList(){
         }
     }
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</parameterList>" << endl;
+    write_close_tag("parameterList");
 }
 
 //compiles a variable declaration
 void CompilationEngine::compile_varDec(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<varDec>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("varDec");
 
     //first token should be var
     Token var = scanner.next();
@@ -307,17 +283,12 @@ void CompilationEngine::compile_varDec(){
     }
     fout << ind << semicolon.to_string() << endl;
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</varDec>" << endl;
+    write_close_tag("varDec");
 }
 
 //compiles a sequence of statements, not including the enclosing curly braces
 void CompilationEngine::compile_statements(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<statements>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("statements");
 
     //loop over all statements
     while(scanner.peek().value == "let" || scanner.peek().value == "if" || scanner.peek().value == "while" || scanner.peek().value == "do" || scanner.peek().value == "return"){
@@ -343,17 +314,12 @@ void CompilationEngine::compile_statements(){
         }
     }
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</statements>" << endl;
+    write_close_tag("statements");
 }
 
 //compiles a let statement
 void CompilationEngine::compile_letStatement(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<letStatement>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("letStatement");
 
     //first token should be let
     Token let_token = scanner.next();
@@ -393,17 +359,13 @@ void CompilationEngine::compile_letStatement(){
     }
     fout << ind << semicolon.to_string() << endl;
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</letStatement>" << endl;
+    write_close_tag("letStatement");
 }
 
 //compiles an if statement
 void CompilationEngine::compile_ifStatement(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<ifStatement>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("ifStatement");
+
     //get if token
     Token iif = scanner.next();
     if(iif.value != "if"){
@@ -460,17 +422,12 @@ void CompilationEngine::compile_ifStatement(){
         fout << ind << closing_braces.to_string() << endl;
     }
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</ifStatement>" << endl; 
+    write_close_tag("ifStatement");
 }
 
 //compiles a while statement
 void CompilationEngine::compile_whileStatement(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<whileStatement>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("whileStatement");
 
     Token whilet = scanner.next();
     fout << ind << whilet.to_string() << endl;
@@ -504,17 +461,12 @@ void CompilationEngine::compile_whileStatement(){
     }
     fout << ind << closing_braces.to_string() << endl;
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</whileStatement>" << endl;
+    write_close_tag("whileStatement");
 }
 
 //compiles a return statement
 void CompilationEngine::compile_returnStatement(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<returnStatement>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("returnStatement");
 
     Token returnt = scanner.next();
     fout << ind << returnt.to_string() << endl;
@@ -528,17 +480,12 @@ void CompilationEngine::compile_returnStatement(){
     }
     fout << ind << semicolon.to_string() << endl;
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</returnStatement>" << endl;
+    write_close_tag("returnStatement");
 }
 
 //compiles a do statement
 void CompilationEngine::compile_doStatement(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<doStatement>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("doStatement");
 
     Token dot = scanner.next();
     fout << ind << dot.to_string() << endl;
@@ -554,19 +501,13 @@ void CompilationEngine::compile_doStatement(){
     }
     fout << ind << semicolon.to_string() << endl;
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</doStatement>" << endl;
+    write_close_tag("doStatement");
 }
-
 
 
 //compiles a (possibly empty) expression list
 void CompilationEngine::compile_expressionList(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<expressionList>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("expressionList");
 
     if(scanner.peek().value != ")"){ //expressionlist is not empty
         compile_expression();
@@ -577,18 +518,13 @@ void CompilationEngine::compile_expressionList(){
         }
     }
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</expressionList>" << endl;
+    write_close_tag("expressionList");
 }
 
 
 //compiles an expression
 void CompilationEngine::compile_expression(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<expression>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("expression");
 
     //expressions are composed of terms.
     compile_term();
@@ -600,19 +536,14 @@ void CompilationEngine::compile_expression(){
         compile_term();
     }
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</expression>" << endl;
+    write_close_tag("expression");
 }
 
 /*
  * compiles a term
  */
 void CompilationEngine::compile_term(){
-    string ind = repeat("\t", indents);
-    fout << ind << "<term>" << endl;
-    indents++;
-    ind = repeat("\t", indents);
+    write_open_tag("term");
 
     string unaryops = "~-"; //string holding the possible unary operators
 
@@ -664,15 +595,13 @@ void CompilationEngine::compile_term(){
         fout << ind << closing_par.to_string() << endl;
     }
 
-    indents--;
-    ind = repeat("\t", indents);
-    fout << ind << "</term>" << endl;
+    write_close_tag("term");
 }
 
 //compiles a subroutine call
 //no actual xml tags for this
 void CompilationEngine::compile_subroutineCall(){
-    string ind = repeat("\t", indents);
+    string ind = repeat(space_char, indents);
 
     Token name = scanner.next();
     if(name.type != identifier){

@@ -38,7 +38,7 @@ void Scanner::init(ifstream &file){
         if(line.find("//")){
             line = line.substr(0, line.find("//"));
         }
-        if(line[line.length() - 1] == '\r'){
+        if(line[line.length() - 1] == '\r'){ //handle files written on Windows
             line = line.substr(0, line.length() - 1);
         }
         contents += line;

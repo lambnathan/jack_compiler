@@ -15,7 +15,9 @@ class CompilationEngine{
 
     private:
         vector<string> filenames;
-        int indents = 0;
+        int indents = 0; //keeps track of how many indents currently
+        string ind = ""; //actual string of indents
+        string space_char = "  "; //string that is used to indent. either a series of spaces or a tab character
         ofstream fout;
         Scanner scanner;
 
