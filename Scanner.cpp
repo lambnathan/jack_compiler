@@ -4,9 +4,18 @@
 #include "Scanner.h"
 
 string remove_leading_whitespace(string str){
-    if(str.length() > 1){
-        str = str.substr(str.find_first_not_of(' '));
-        return str;
+    //make sure string is long enough and that first char is actually whitespace
+    while(str.length() > 1 && (str[0] == ' ' || str[0] == '\t')){
+        if(str.find_first_not_of(' ') == string::npos || str.find_first_not_of('\t') == string::npos){
+            //string of all spaces or tabs
+            return "";
+        }
+        if(str[0] == ' '){
+            str = str.substr(str.find_first_not_of(' '));
+        }
+        else if(str[0] == '\t'){
+            str = str.substr(str.find_first_not_of('\t'));
+        }
     }
     return str;
 }
@@ -91,6 +100,7 @@ Token Scanner::peek(){
             }
         }
     }
+    cout << "contents: " << contents << endl;
     return Token(null, "null"); 
 }
 
@@ -128,7 +138,6 @@ Token Scanner::next(){
     size_t pos = contents.find(token.value) + token.value.length();
     contents = contents.substr(pos);
     contents = remove_leading_whitespace(contents); 
-
     return token;
 }
 

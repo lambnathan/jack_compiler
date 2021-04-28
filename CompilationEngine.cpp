@@ -62,6 +62,7 @@ void CompilationEngine::compile(){
         fout.close();
         fin.close();
         indents = 0; //reset the indent counter after done with file
+        ind = "";
     }
 }
 
@@ -290,7 +291,6 @@ void CompilationEngine::compile_varDec(){
 void CompilationEngine::compile_statements(){
     write_open_tag("statements");
 
-    //loop over all statements
     while(scanner.peek().value == "let" || scanner.peek().value == "if" || scanner.peek().value == "while" || scanner.peek().value == "do" || scanner.peek().value == "return"){
         Token statement_type = scanner.peek();
         if(statement_type.value == "let"){
