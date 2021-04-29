@@ -100,7 +100,7 @@ Token Scanner::peek(){
             }
         }
     }
-    cout << "contents: " << contents << endl;
+    //cout << "contents: " << contents << endl;
     return Token(null, "null"); 
 }
 
