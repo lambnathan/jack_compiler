@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Scanner.h"
+#include "SymbolTable.h"
 
 using namespace std;
 
@@ -20,6 +21,12 @@ class CompilationEngine{
         string space_char = "  "; //string that is used to indent. either a series of spaces or a tab character
         ofstream fout;
         Scanner scanner;
+
+        SymbolTable global_table; //holds statics and fields
+        SymbolTable local_table;
+        int class_offset = 0;
+        int local_offset = 0;
+        int arg_offset = 0;
 
         //helper functions to write opening and closing xml tags
         void write_open_tag(string val);

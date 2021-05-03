@@ -37,6 +37,7 @@ void CompilationEngine::write_close_tag(string val){
 }
 
 void CompilationEngine::compile(){
+
     // go through each .jack file
     for(string name: filenames){
         cout << "compiling: " << name << endl;
@@ -44,6 +45,10 @@ void CompilationEngine::compile(){
         scanner.init(fin);
         string outfile = name.substr(0, name.find(".jack")) + ".xml";
         fout.open(outfile);
+
+        //clear both symbol tables for the new class
+        local_table.clear();
+        global_table.clear();
 
         if(scanner.has_next()){
             Token token = scanner.peek();
@@ -108,6 +113,7 @@ void CompilationEngine::compile_classVarDec(){
 
     Token static_or_field = scanner.next();
     fout << ind << static_or_field.to_string() << endl;
+    string type = scanner.peek().value;
     compile_type();
 
     //now must see at least one identifier for varname
@@ -117,6 +123,11 @@ void CompilationEngine::compile_classVarDec(){
         exit(-1);
     }
     fout << ind << varname.to_string() << endl;
+    string name = varname.value;
+
+    //create new symbol record for the static/field variable
+    global_table.put(name, type, "this", class_offset);
+    class_offset++;
 
     //now loop, outputting comma symbols and additional identifiers until able to output semicolon
     while(scanner.peek().value != ";"){
@@ -128,6 +139,9 @@ void CompilationEngine::compile_classVarDec(){
         fout << ind << comma.to_string() << endl;
         Token next_var_name = scanner.next();
         fout << ind << next_var_name.to_string() << endl;
+
+        global_table.put(next_var_name.value, type, "this", class_offset);
+        class_offset++;
     }
     Token semicolon = scanner.next();
     fout << ind << semicolon.to_string() << endl;
@@ -143,6 +157,10 @@ void CompilationEngine::compile_type(){
 
 //compiles the declaration for a subroutine
 void CompilationEngine::compile_subroutineDec(){
+    //first zero out counters for locals and arguments
+    local_offset = 0;
+    arg_offset = 0;
+
     write_open_tag("subroutineDec");
 
     //first make sure keyword is either function, method, or constructor
@@ -150,6 +168,8 @@ void CompilationEngine::compile_subroutineDec(){
     if(subtype.value == "function" || subtype.value == "method" || subtype.value == "constructor"){
         fout << ind << "<keyword> " << subtype.value << " </keyword>" << endl;
         //next token should be a type keyword
+        string type_keyword = scanner.peek().value;
+
         compile_type();
         //next should be an identifier
         Token subname = scanner.next();
@@ -158,6 +178,13 @@ void CompilationEngine::compile_subroutineDec(){
             exit(-1);
         }
         fout << ind << subname.to_string() << endl;
+
+        if(subtype.value == "method"){
+            //if subroutine is a method, need to add "this" to local table
+            local_table.put("this", type_keyword, "argument", arg_offset); //might not need this, just the increment 
+            arg_offset++;
+        }
+
         Token open_symbol = scanner.next();
         if(open_symbol.value != "("){
             cerr << "Error. Expected an open symbol after subroutine name. (subroutineDec)" << endl;
@@ -224,6 +251,7 @@ void CompilationEngine::compile_parameterList(){
     //to get all parameters, loop until we find closing paranthesis
     while(scanner.peek().value != ")"){
         //next should be a type. 
+        string var_type = scanner.peek().value;
         compile_type();
         Token varname = scanner.next();
         if(varname.type != identifier){
@@ -235,6 +263,9 @@ void CompilationEngine::compile_parameterList(){
             Token comma = scanner.next();
             fout << ind << "<symbol> , </symbol>" << endl; 
         }
+        //parameters into local table
+        local_table.put(varname.value, var_type, "argument", arg_offset);
+        arg_offset++;
     }
 
     write_close_tag("parameterList");
@@ -252,6 +283,7 @@ void CompilationEngine::compile_varDec(){
     }
     fout << ind << "<keyword> var </keyword>" << endl;
     //next comes the type of var
+    string var_type = scanner.peek().value;
     compile_type();
     //next comes the varname
     Token varname = scanner.next();
@@ -260,6 +292,10 @@ void CompilationEngine::compile_varDec(){
         exit(-1);
     }
     fout << ind << "<identifier> " << varname.value << " </identifier>" << endl;
+    //put var declaration into table
+    local_table.put(varname.value, var_type, "local", local_offset);
+    local_offset++;
+
     //if there is not a semi colon next, there are more variables being declared
     while(scanner.peek().value != ";"){
         //should be a comma sperating vars
@@ -276,6 +312,9 @@ void CompilationEngine::compile_varDec(){
             exit(-1);
         }
         fout << ind << "<identifier> " << nextvar.value << " </identifier>" << endl;
+        //add next vars to table
+        local_table.put(nextvar.value, var_type, "local", local_offset);
+        local_offset++;
     }
     Token semicolon = scanner.next();
     if(semicolon.value != ";"){
