@@ -1,0 +1,2 @@
+# Jack Compiler
+This is a compiler that translates code written written in the simple, high level language called Jack to the intermediate Virtual Machine language. This compiler uses recursive descent, and the Jack language's grammar is almost an *LL(0)* grammar, where the only lookahead is for parsing of expressions. 
