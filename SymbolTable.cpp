@@ -1,7 +1,6 @@
-
+#include <iostream>
 
 #include "SymbolTable.h"
-#include "SymbolRecord.h"
 
 SymbolTable::SymbolTable(){}
 
@@ -24,4 +23,12 @@ bool SymbolTable::contains(string name){
 //clears the symboltable
 void SymbolTable::clear(){
     symbol_table.clear();
+}
+
+//function for priting the symbol table, for debugging purposes
+void SymbolTable::print(){
+    cout << "Name\t Type\t Segment\t Offset" << endl;
+    for(auto pair: symbol_table){
+        cout << pair.first << "\t|" << pair.second.type << "\t|" << pair.second.segment << "\t|" << pair.second.offset << endl;
+    } 
 }

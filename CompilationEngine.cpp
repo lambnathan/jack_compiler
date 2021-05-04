@@ -43,7 +43,8 @@ void CompilationEngine::compile(){
         cout << "compiling: " << name << endl;
         ifstream fin(name);
         scanner.init(fin);
-        string outfile = name.substr(0, name.find(".jack")) + ".xml";
+        //string outfile = name.substr(0, name.find(".jack")) + ".xml";
+        string outfile = name.substr(0, name.find(".jack")) + ".vm";
         fout.open(outfile);
 
         //clear both symbol tables for the new class
@@ -68,6 +69,7 @@ void CompilationEngine::compile(){
         fin.close();
         indents = 0; //reset the indent counter after done with file
         ind = "";
+
     }
 }
 
@@ -87,6 +89,7 @@ void CompilationEngine::compile_class(){
         exit(-1);
     }
     fout << ind << class_name.to_string() << endl;
+    current_class = class_name.value; //store current class name
     Token open_brace = scanner.next();
     if(open_brace.value != "{"){
         cerr << "Error. Expected an open brace after class name. (class)" << endl;
@@ -157,7 +160,8 @@ void CompilationEngine::compile_type(){
 
 //compiles the declaration for a subroutine
 void CompilationEngine::compile_subroutineDec(){
-    //first zero out counters for locals and arguments
+    //first zero out counters for locals and arguments, and clear the local symbol table
+    local_table.clear();
     local_offset = 0;
     arg_offset = 0;
 
@@ -173,6 +177,7 @@ void CompilationEngine::compile_subroutineDec(){
         compile_type();
         //next should be an identifier
         Token subname = scanner.next();
+        current_subroutine = subname.value;
         if(subname.type != identifier){
             cerr << "Error. Expected an identifier after type. (subroutineDec)" << endl;
             exit(-1);

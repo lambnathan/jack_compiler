@@ -22,11 +22,14 @@ class CompilationEngine{
         ofstream fout;
         Scanner scanner;
 
+        //things needed for actual code generation
         SymbolTable global_table; //holds statics and fields
         SymbolTable local_table;
         int class_offset = 0;
         int local_offset = 0;
         int arg_offset = 0;
+        string current_class;
+        string current_subroutine; 
 
         //helper functions to write opening and closing xml tags
         void write_open_tag(string val);
