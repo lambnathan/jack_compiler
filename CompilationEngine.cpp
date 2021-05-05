@@ -726,6 +726,14 @@ void CompilationEngine::compile_term(){
             if(term.value == "this"){
                 fout << "push pointer 0" << endl;
             }
+            else if(term.value == "false" || term.value == "null"){
+                fout << "push constant 0" << endl;
+            }
+            else if(term.value == "true"){
+                //true is mapped to -1
+                fout << "push constant 1" << endl;
+                fout << "neg" << endl;
+            }
         }
     }
     else if(unaryops.find(term.value) != string::npos){
