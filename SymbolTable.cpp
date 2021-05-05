@@ -13,6 +13,9 @@ SymbolRecord SymbolTable::get(string name){
 void SymbolTable::put(string name, string type, string segment, int offset){
     SymbolRecord rec(type, segment, offset);
     symbol_table[name] = rec;
+    if(segment == "this"){ //check if it is a field
+        num_fields++;
+    }
 }
 
 //checks if there is already a symboltable entry

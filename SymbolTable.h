@@ -17,9 +17,9 @@ class SymbolTable{
         bool contains(string name);
         void clear();
 
+        int num_fields = 0; //stores the number of fields (only for the global table)
+
         void print(); //for debugging  
-
-
 
     private:
         map<string, SymbolRecord> symbol_table;

@@ -147,8 +147,12 @@ void CompilationEngine::compile_classVarDec(){
         //fout << ind << comma.to_string() << endl;
         Token next_var_name = scanner.next();
         //fout << ind << next_var_name.to_string() << endl;
-
-        global_table.put(next_var_name.value, type, "this", class_offset);
+        if(static_or_field.value == "static"){
+            global_table.put(next_var_name.value, type, "static", class_offset);
+        }
+        else{
+            global_table.put(next_var_name.value, type, "this", class_offset);
+        }
         class_offset++;
     }
     Token semicolon = scanner.next();
@@ -175,6 +179,7 @@ void CompilationEngine::compile_subroutineDec(){
     //first make sure keyword is either function, method, or constructor
     Token subtype = scanner.next();
     if(subtype.value == "function" || subtype.value == "method" || subtype.value == "constructor"){
+        function_type = subtype.value;
         //fout << ind << "<keyword> " << subtype.value << " </keyword>" << endl;
         //next token should be a type keyword
         string type_keyword = scanner.peek().value;
@@ -247,6 +252,21 @@ void CompilationEngine::compile_subroutine(){
             compile_varDec();
         }
         fout << "function " << current_class << "." << current_subroutine << " " << local_offset << endl;
+
+        if(function_type == "constructor"){
+            //get how many class vars are fields
+            int num_fields = global_table.num_fields;
+            fout << "push constant " << num_fields << endl;
+            fout << "call Memory.alloc 1" << endl;
+            fout << "pop pointer 0" << endl;
+        }
+        else if(function_type == "method"){
+            //set this = arg 0
+            fout << "push argument 0" << endl;
+            fout << "pop pointer 0" << endl;
+        }
+
+
         compile_statements();
     }
 
@@ -584,8 +604,9 @@ void CompilationEngine::compile_returnStatement(){
     //fout << ind << semicolon.to_string() << endl;
 
     if(!was_expression){ //only do this if ther was no expression for the return
-        fout << "push constant 0\nreturn" << endl;
+        fout << "push constant 0" << endl;
     }
+    fout << "return" << endl;
 
     //write_close_tag("returnStatement");
 }
@@ -699,6 +720,11 @@ void CompilationEngine::compile_term(){
             for(int i = 0; i < str_len; i++){
                 fout << "push constant " << int(term.value[i]) << endl;
                 fout << "call String.appendChar 2" << endl;
+            }
+        }
+        else if(term.type == keyword){
+            if(term.value == "this"){
+                fout << "push pointer 0" << endl;
             }
         }
     }

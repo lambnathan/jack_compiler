@@ -30,6 +30,7 @@ class CompilationEngine{
         int arg_offset = 0;
         string current_class;
         string current_subroutine; 
+        string function_type; //either function, method, or constructor
         int counter = 0; //appended to labels for if and while statements, making sure they are unique
 
         //helper functions to write opening and closing xml tags
