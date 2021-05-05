@@ -553,23 +553,29 @@ void CompilationEngine::compile_doStatement(){
     //fout << ind << semicolon.to_string() << endl;
 
     //write_close_tag("doStatement");
+    fout << "pop temp 0" << endl; //all functions pusha return value to stack, but we want to discard that for do stmnts
 }
 
 
 //compiles a (possibly empty) expression list
-void CompilationEngine::compile_expressionList(){
+int CompilationEngine::compile_expressionList(){
     //write_open_tag("expressionList");
+
+    int num_expressions = 0;
 
     if(scanner.peek().value != ")"){ //expressionlist is not empty
         compile_expression();
+        num_expressions++;
         while(scanner.peek().value == ","){
             Token comma = scanner.next();
             //fout << ind << comma.to_string() << endl;
             compile_expression();
+            num_expressions++;
         }
     }
 
     //write_close_tag("expressionList");
+    return num_expressions;
 }
 
 
@@ -585,6 +591,31 @@ void CompilationEngine::compile_expression(){
         Token bop = scanner.next();
         //fout << ind << bop.to_string() << endl;
         compile_term();
+        //write appropriate opperation
+        switch(bop.value[0]){
+            case '+':
+                fout << "add" << endl;
+                break;
+            case '-':
+                fout << "sub" << endl;
+                break;
+            case '/':
+                fout << "call Math.divide 2" << endl;
+                break;
+            case '*':
+                fout << "call Math.multiply 2" << endl;
+                break;
+            case '=':
+                break;
+            case '>':
+                break;
+            case '<':
+                break;
+            case '&':
+                break;
+            case '|':
+                break;
+        }
     }
 
     //write_close_tag("expression");
@@ -602,6 +633,9 @@ void CompilationEngine::compile_term(){
     if(term.type == integer_constant || term.type == string_constant || term.type == keyword){
         term = scanner.next();
         //fout << ind << term.to_string() << endl;
+        if(term.type == integer_constant){
+            fout << "push constant " << term.value << endl;
+        }
     }
     else if(unaryops.find(term.value) != string::npos){
         term = scanner.next();
@@ -655,15 +689,18 @@ void CompilationEngine::compile_subroutineCall(){
     string ind = repeat(space_char, indents);
 
     Token name = scanner.next();
+    string class_or_var = name.value;
     if(name.type != identifier){
         cerr << "Error. Expected an identifier for the subroutine. (subroutine_call)" << endl;
         exit(-1);
     }
     //fout << ind << name.to_string() << endl;
-    if(scanner.peek().value == "("){
+    if(scanner.peek().value == "("){ //subroutineName(expressionList)
         Token open_symbol = scanner.next();
         //fout << ind << open_symbol.to_string() << endl;
-        compile_expressionList();
+        fout << "push pointer 0" << endl;
+        int num_expressions = compile_expressionList();
+        fout << "call " << current_class << "." << class_or_var << num_expressions << endl;
         Token closing_symbol = scanner.next();
         if(closing_symbol.value != ")"){
             cerr << "Error. Expected a closing parenthesis. (subroutine_call)" << endl;
@@ -671,7 +708,7 @@ void CompilationEngine::compile_subroutineCall(){
         }
         //fout << ind << closing_symbol.to_string() << endl;
     }
-    else if(scanner.peek().value == "."){
+    else if(scanner.peek().value == "."){ //two possibilities
         Token dot = scanner.next();
         //fout << ind << dot.to_string() << endl;
         name = scanner.next();
@@ -682,12 +719,31 @@ void CompilationEngine::compile_subroutineCall(){
         //fout << ind << name.to_string() << endl;
         Token open_symbol = scanner.next();
         //fout << ind << open_symbol.to_string() << endl;
-        compile_expressionList();
+
+        if(local_table.contains(class_or_var) || global_table.contains(class_or_var)){
+            //varName.subroutineName(expressionList)
+            string segment;
+            int offset;
+            if(local_table.contains(class_or_var)){
+                segment = local_table.get(class_or_var).segment;
+                offset = local_table.get(class_or_var).offset;
+            }
+            else{
+                segment = global_table.get(class_or_var).segment;
+                offset = global_table.get(class_or_var).offset;
+            }
+            fout << "push " << segment << " " << offset << endl;
+        }
+
+        int num_expressions = compile_expressionList();
         Token closing_symbol = scanner.next();
         if(closing_symbol.value != ")"){
             cerr << "Error. Expected a closing parenthesis. (subroutine_call)" << endl;
             exit(-1);
         }
+
+        fout << "call " << class_or_var << "." << name.value << " " << num_expressions << endl;
+
         //fout << ind << closing_symbol.to_string() << endl;
     }
 }

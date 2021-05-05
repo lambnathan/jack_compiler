@@ -23,8 +23,8 @@ class CompilationEngine{
         Scanner scanner;
 
         //things needed for actual code generation
-        SymbolTable global_table; //holds statics and fields
-        SymbolTable local_table;
+        SymbolTable global_table; //holds statics and fields. gets created fresh for every class/.jack file
+        SymbolTable local_table; //holds all local variables. gets created fresh for every function
         int class_offset = 0;
         int local_offset = 0;
         int arg_offset = 0;
@@ -49,7 +49,7 @@ class CompilationEngine{
         void compile_doStatement();
         void compile_returnStatement();
         void compile_expression();
-        void compile_expressionList();
+        int compile_expressionList(); //returns the number of expressions in the expression list
         void compile_term();
         void compile_type();
         void compile_subroutineCall();
