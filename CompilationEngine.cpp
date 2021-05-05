@@ -409,11 +409,36 @@ void CompilationEngine::compile_letStatement(){
     }
     //fout << ind << varname.to_string() << endl;
     //what comes next is either an array expression or a normal expression
+    bool is_array_expression = false;
     if(scanner.peek().value == "["){
-        //this is an array expression
+        //this is an array expression. let varName[expression]  = expression
+        is_array_expression = true;
         Token open_square = scanner.next();
         //fout << ind << open_square.to_string() << endl;
+
+        //get the segment of the var in the let statement, and push to stack
+        string segment;
+        int index;
+        if(global_table.contains(varname.value) || local_table.contains(varname.value)){
+            if(global_table.contains(varname.value)){
+                segment = global_table.get(varname.value).segment;
+                index = global_table.get(varname.value).offset;
+            }
+            else{
+                segment = local_table.get(varname.value).segment;
+                index = local_table.get(varname.value).offset;
+            }
+        }
+        else{
+            cerr << "Error. " << varname.value << " has not been declared. (let statement)" << endl;
+            exit(-1);
+        }
+        fout << "push " << segment << " " << index << endl;
+
         compile_expression();
+
+        fout << "add" << endl;
+
         Token close_square = scanner.next();
         if(close_square.value != "]"){
             cerr << "Error. Expected a closing square bracket for array. (let statement)" << endl;
@@ -430,22 +455,32 @@ void CompilationEngine::compile_letStatement(){
     //fout << ind << equ.to_string() << endl;
     compile_expression();
 
-    string segment;
-    int offset;
-    if(local_table.contains(varname.value) || global_table.contains(varname.value)){
-        if(local_table.contains(varname.value)){
-            segment = local_table.get(varname.value).segment;
-            offset = local_table.get(varname.value).offset;
-        }
-        else{
-            segment = global_table.get(varname.value).segment;
-            offset = global_table.get(varname.value).offset;
-        }
-        fout << "pop " << segment << " " << offset << endl;
+    if(is_array_expression){
+        //handles array assignment
+        fout << "push local 0" << endl;
+        fout << "push temp 0 " << endl;
+        fout << "add" << endl;
+        fout << "pop pointer 1" << endl;
+        fout << "pop that 0" << endl;
     }
     else{
-        cerr << "Error. " << varname.value << " has not been decalared. (let_statement)" << endl;
-        exit(-1);
+        string segment;
+        int offset;
+        if(local_table.contains(varname.value) || global_table.contains(varname.value)){
+            if(local_table.contains(varname.value)){
+                segment = local_table.get(varname.value).segment;
+                offset = local_table.get(varname.value).offset;
+            }
+            else{
+                segment = global_table.get(varname.value).segment;
+                offset = global_table.get(varname.value).offset;
+            }
+            fout << "pop " << segment << " " << offset << endl;
+        }
+        else{
+            cerr << "Error. " << varname.value << " has not been decalared. (let_statement)" << endl;
+            exit(-1);
+        }
     }
 
     Token semicolon = scanner.next();
