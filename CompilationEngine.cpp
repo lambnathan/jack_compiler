@@ -129,7 +129,12 @@ void CompilationEngine::compile_classVarDec(){
     string name = varname.value;
 
     //create new symbol record for the static/field variable
-    global_table.put(name, type, "this", class_offset);
+    if(static_or_field.value == "static"){
+        global_table.put(name, type, "static", class_offset);
+    }
+    else{
+        global_table.put(name, type, "this", class_offset);
+    }
     class_offset++;
 
     //now loop, outputting comma symbols and additional identifiers until able to output semicolon
@@ -221,8 +226,6 @@ void CompilationEngine::compile_subroutineDec(){
 void CompilationEngine::compile_subroutine(){
     //write_open_tag("subroutineBody");
 
-    fout << "function " << current_class << "." << current_subroutine << " " << local_offset << endl;
-
     Token open_symbol = scanner.next();
     if(open_symbol.value != "{"){
         cerr << "Error. Opening curly brace expected for subroutine body. (subroutine)" << endl;
@@ -233,13 +236,18 @@ void CompilationEngine::compile_subroutine(){
     //now there should either be variable declartations, or statements
     //loop until the next closing curly brace is found
     while(scanner.peek().value != "}"){
-        Token next_kwd = scanner.peek();
-        if(next_kwd.value == "var"){
+        // Token next_kwd = scanner.peek();
+        // if(next_kwd.value == "var"){
+        //     compile_varDec();
+        // }
+        // else{
+        //     compile_statements();
+        // }
+        while(scanner.peek().value == "var"){
             compile_varDec();
         }
-        else{
-            compile_statements();
-        }
+        fout << "function " << current_class << "." << current_subroutine << " " << local_offset << endl;
+        compile_statements();
     }
 
     Token closing_symbol = scanner.next();
@@ -401,6 +409,25 @@ void CompilationEngine::compile_letStatement(){
     }
     //fout << ind << equ.to_string() << endl;
     compile_expression();
+
+    string segment;
+    int offset;
+    if(local_table.contains(varname.value) || global_table.contains(varname.value)){
+        if(local_table.contains(varname.value)){
+            segment = local_table.get(varname.value).segment;
+            offset = local_table.get(varname.value).offset;
+        }
+        else{
+            segment = global_table.get(varname.value).segment;
+            offset = global_table.get(varname.value).offset;
+        }
+        fout << "pop " << segment << " " << offset << endl;
+    }
+    else{
+        cerr << "Error. " << varname.value << " has not been decalared. (let_statement)" << endl;
+        exit(-1);
+    }
+
     Token semicolon = scanner.next();
     if(semicolon.value != ";"){
         cerr << "Error. Expected semicolon after expression. (let statement)" << endl;
@@ -666,6 +693,12 @@ void CompilationEngine::compile_term(){
             //just a normal identifier
             term = scanner.next();
             //fout << ind << term.to_string() << endl;
+
+            if(local_table.contains(term.value)){
+                string segment = local_table.get(term.value).segment;
+                int offset = local_table.get(term.value).offset;
+                fout << "push " << segment << " " << offset << endl;
+            }
         }
     }
     else if(term.type == symbol && term.value == "("){ //is an expression

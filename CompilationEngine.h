@@ -30,6 +30,7 @@ class CompilationEngine{
         int arg_offset = 0;
         string current_class;
         string current_subroutine; 
+        int while_statement_count = 0;
 
         //helper functions to write opening and closing xml tags
         void write_open_tag(string val);
