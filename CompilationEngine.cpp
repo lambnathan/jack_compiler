@@ -783,6 +783,25 @@ void CompilationEngine::compile_term(){
             Token open_symbol = scanner.next();
             open_symbol = scanner.next(); //need to consume two
             //fout << ind << open_symbol.to_string() << endl;
+
+            string segment;
+            int index;
+            if(global_table.contains(term.value) || local_table.contains(term.value)){
+                if(global_table.contains(term.value)){
+                    segment = global_table.get(term.value).segment;
+                    index = global_table.get(term.value).offset;
+                }
+                else{
+                    segment = local_table.get(term.value).segment;
+                    index = local_table.get(term.value).offset;
+                }
+            }
+            else{
+                cerr << "Error. " << term.value << " was not declared. (term)" << endl;
+                exit(-1);
+            }
+            fout << "push " << segment << " " << index << endl;
+
             //now parse an expression
             compile_expression();
             Token close_symbol = scanner.next();
@@ -791,6 +810,11 @@ void CompilationEngine::compile_term(){
                 exit(-1);
             }
             //fout << ind << close_symbol.to_string() << endl;
+
+            //handles array access
+            fout << "add" << endl;
+            fout << "pop pointer 1" << endl;
+            fout << "push that 0" << endl;
         }
         else if(scanner.peek_two().value == "(" || scanner.peek_two().value == "."){
             //subroutine call 
