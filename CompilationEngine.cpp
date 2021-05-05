@@ -457,6 +457,10 @@ void CompilationEngine::compile_ifStatement(){
     //fout << ind << open_par.to_string() << endl;
     //now there should be an expression
     compile_expression();
+
+    fout << "not" << endl;
+    fout << "if-goto IF_FALSE_" << counter << endl;
+
     Token closing_par = scanner.next();
     if(closing_par.value != ")"){
         cerr << "Error. Expected a closing parenthesis for if statement. (ifStatement)" << endl;
@@ -472,6 +476,10 @@ void CompilationEngine::compile_ifStatement(){
     //fout << ind << open_braces.to_string() << endl;
     //statements are insdie curly braces
     compile_statements();
+
+    fout << "goto IF_END_" << counter << endl;
+    fout << "label IF_FALSE_" << counter << endl;
+
     Token closing_braces = scanner.next();
     if(closing_braces.value != "}"){
         cerr << "Error. Expected closing braces. (ifStatement)" << endl;
@@ -490,6 +498,10 @@ void CompilationEngine::compile_ifStatement(){
         //fout << ind << open_braces.to_string() << endl;
         //statements are insdie curly braces
         compile_statements();
+
+        fout << "label IF_END_" << counter << endl;
+        counter++;
+
         closing_braces = scanner.next();
         if(closing_braces.value != "}"){
             cerr << "Error. Expected closing braces. (ifStatement)" << endl;
@@ -514,7 +526,14 @@ void CompilationEngine::compile_whileStatement(){
     }
     fout << ind << open_par.to_string() << endl;
     //now there should be an expression
+
+    //first generate label
+    fout << "label WHILE_" << counter << endl;
     compile_expression();
+
+    fout << "not" << endl;
+    fout << "if-goto WHILE_END_" << counter << endl;
+
     Token closing_par = scanner.next();
     if(closing_par.value != ")"){
         cerr << "Error. Expected a closing parenthesis for while statement. (whileStatement)" << endl;
@@ -530,11 +549,17 @@ void CompilationEngine::compile_whileStatement(){
     //fout << ind << open_braces.to_string() << endl;
     //statements are insdie curly braces
     compile_statements();
+
+    fout << "goto WHILE_" << counter << endl;
+    fout << "label WHILE_END_" << counter << endl;
+    counter++;
+
     Token closing_braces = scanner.next();
     if(closing_braces.value != "}"){
         cerr << "Error. Expected closing braces. (whileStatement)" << endl;
         exit(-1);
     }
+
     //fout << ind << closing_braces.to_string() << endl;
 
     //write_close_tag("whileStatement");
@@ -546,8 +571,10 @@ void CompilationEngine::compile_returnStatement(){
 
     Token returnt = scanner.next();
     //fout << ind << returnt.to_string() << endl;
+    bool was_expression = false;
     if(scanner.peek().value != ";"){
         compile_expression();
+        was_expression = true;
     }
     Token semicolon = scanner.next();
     if(semicolon.value != ";"){
@@ -556,7 +583,9 @@ void CompilationEngine::compile_returnStatement(){
     }
     //fout << ind << semicolon.to_string() << endl;
 
-    fout << "push constant 0\nreturn" << endl;
+    if(!was_expression){ //only do this if ther was no expression for the return
+        fout << "push constant 0\nreturn" << endl;
+    }
 
     //write_close_tag("returnStatement");
 }
@@ -662,6 +691,15 @@ void CompilationEngine::compile_term(){
         //fout << ind << term.to_string() << endl;
         if(term.type == integer_constant){
             fout << "push constant " << term.value << endl;
+        }
+        else if(term.type == string_constant){
+            int str_len = term.value.length();
+            fout << "push constant " << str_len << endl;
+            fout << "call String.new 1" << endl;
+            for(int i = 0; i < str_len; i++){
+                fout << "push constant " << int(term.value[i]) << endl;
+                fout << "call String.appendChar 2" << endl;
+            }
         }
     }
     else if(unaryops.find(term.value) != string::npos){
