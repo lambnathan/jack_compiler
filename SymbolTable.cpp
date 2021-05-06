@@ -34,4 +34,5 @@ void SymbolTable::print(){
     for(auto pair: symbol_table){
         cout << pair.first << "\t|" << pair.second.type << "\t|" << pair.second.segment << "\t|" << pair.second.offset << endl;
     } 
+    cout << endl;
 }

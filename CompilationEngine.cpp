@@ -280,6 +280,8 @@ void CompilationEngine::compile_subroutine(){
     //also might have include code to return 0 if a return statement is not included at the end
 
     //write_close_tag("subroutineBody");
+    //cout << "current func: " << current_subroutine << endl;
+    //local_table.print(); //for debugging
 }
 
 //compiles a (possibly empty) parameter list (not inluding the parenthesis)
@@ -514,7 +516,7 @@ void CompilationEngine::compile_ifStatement(){
     compile_expression();
 
     fout << "not" << endl;
-    fout << "if-goto IF_FALSE_" << counter << endl;
+    fout << "if-goto IF_FALSE_" << if_counter << endl;
 
     Token closing_par = scanner.next();
     if(closing_par.value != ")"){
@@ -532,8 +534,8 @@ void CompilationEngine::compile_ifStatement(){
     //statements are insdie curly braces
     compile_statements();
 
-    fout << "goto IF_END_" << counter << endl;
-    fout << "label IF_FALSE_" << counter << endl;
+    fout << "goto IF_END_" << if_counter << endl;
+    fout << "label IF_FALSE_" << if_counter << endl;
 
     Token closing_braces = scanner.next();
     if(closing_braces.value != "}"){
@@ -554,9 +556,6 @@ void CompilationEngine::compile_ifStatement(){
         //statements are insdie curly braces
         compile_statements();
 
-        fout << "label IF_END_" << counter << endl;
-        counter++;
-
         closing_braces = scanner.next();
         if(closing_braces.value != "}"){
             cerr << "Error. Expected closing braces. (ifStatement)" << endl;
@@ -564,6 +563,9 @@ void CompilationEngine::compile_ifStatement(){
         }
         //fout << ind << closing_braces.to_string() << endl;
     }
+
+    fout << "label IF_END_" << if_counter << endl;
+    if_counter++;
 
     //write_close_tag("ifStatement");
 }
@@ -579,8 +581,11 @@ void CompilationEngine::compile_whileStatement(){
         cerr << "Error. Expected opening parenthesis for while statement. (whileStatement)" << endl;
         exit(-1);
     }
-    fout << ind << open_par.to_string() << endl;
+    //fout << ind << open_par.to_string() << endl;
     //now there should be an expression
+
+    int counter = while_counter; //will be used to manage issues with recursion
+    while_counter++;
 
     //first generate label
     fout << "label WHILE_" << counter << endl;
@@ -607,7 +612,7 @@ void CompilationEngine::compile_whileStatement(){
 
     fout << "goto WHILE_" << counter << endl;
     fout << "label WHILE_END_" << counter << endl;
-    counter++;
+    //while_counter++;
 
     Token closing_braces = scanner.next();
     if(closing_braces.value != "}"){
@@ -718,14 +723,19 @@ void CompilationEngine::compile_expression(){
                 fout << "call Math.multiply 2" << endl;
                 break;
             case '=':
+                fout << "eq" << endl;
                 break;
             case '>':
+                fout << "gt" << endl;
                 break;
             case '<':
+                fout << "lt" << endl;
                 break;
             case '&':
+                fout << "and" << endl;
                 break;
             case '|':
+                fout << "or" << endl;
                 break;
         }
     }
@@ -775,6 +785,12 @@ void CompilationEngine::compile_term(){
         term = scanner.next();
         //fout << ind << term.to_string() << endl;
         compile_term();
+        if(term.value == "-"){
+            fout << "neg" << endl;
+        }
+        else{
+            fout << "not" << endl;
+        }
     }
     else if(term.type == identifier){ //could either be array indexing, a subroutine call (different forms), or just an identifier
         if(scanner.peek_two().value == "["){
@@ -825,10 +841,22 @@ void CompilationEngine::compile_term(){
             term = scanner.next();
             //fout << ind << term.to_string() << endl;
 
-            if(local_table.contains(term.value)){
-                string segment = local_table.get(term.value).segment;
-                int offset = local_table.get(term.value).offset;
+            string segment;
+            int offset;
+            if(local_table.contains(term.value) || global_table.contains(term.value)){
+                if(local_table.contains(term.value)){
+                    segment = local_table.get(term.value).segment;
+                    offset = local_table.get(term.value).offset;
+                }
+                else{
+                    segment = global_table.get(term.value).segment;
+                    offset = global_table.get(term.value).offset;
+                }
                 fout << "push " << segment << " " << offset << endl;
+            }
+            else{
+                cerr << "Error. " << term.value << " was not declared. (term)" << endl;
+                exit(-1);
             }
         }
     }
@@ -863,8 +891,8 @@ void CompilationEngine::compile_subroutineCall(){
         Token open_symbol = scanner.next();
         //fout << ind << open_symbol.to_string() << endl;
         fout << "push pointer 0" << endl;
-        int num_expressions = compile_expressionList();
-        fout << "call " << current_class << "." << class_or_var << num_expressions << endl;
+        int num_expressions = compile_expressionList() + 1; //+1 for this
+        fout << "call " << current_class << "." << class_or_var << " " << num_expressions << endl;
         Token closing_symbol = scanner.next();
         if(closing_symbol.value != ")"){
             cerr << "Error. Expected a closing parenthesis. (subroutine_call)" << endl;
@@ -884,6 +912,7 @@ void CompilationEngine::compile_subroutineCall(){
         Token open_symbol = scanner.next();
         //fout << ind << open_symbol.to_string() << endl;
 
+        int include_this_arg = 0;
         if(local_table.contains(class_or_var) || global_table.contains(class_or_var)){
             //varName.subroutineName(expressionList)
             string segment;
@@ -891,15 +920,18 @@ void CompilationEngine::compile_subroutineCall(){
             if(local_table.contains(class_or_var)){
                 segment = local_table.get(class_or_var).segment;
                 offset = local_table.get(class_or_var).offset;
+                class_or_var = local_table.get(class_or_var).type;
             }
             else{
                 segment = global_table.get(class_or_var).segment;
                 offset = global_table.get(class_or_var).offset;
+                class_or_var = global_table.get(class_or_var).type;
             }
             fout << "push " << segment << " " << offset << endl;
+            include_this_arg++;
         }
 
-        int num_expressions = compile_expressionList();
+        int num_expressions = compile_expressionList() + include_this_arg;
         Token closing_symbol = scanner.next();
         if(closing_symbol.value != ")"){
             cerr << "Error. Expected a closing parenthesis. (subroutine_call)" << endl;
