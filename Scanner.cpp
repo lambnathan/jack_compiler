@@ -138,6 +138,11 @@ Token Scanner::next(){
     size_t pos = contents.find(token.value) + token.value.length();
     contents = contents.substr(pos);
     contents = remove_leading_whitespace(contents); 
+    //if the type was a string_constant, have to remove quotes from the token's value after adjuststing the contents
+    if(token.type == string_constant){
+        string val = token.value.substr(1, token.value.length() - 2); //to remove quotes
+        token.value = val;
+    }
     return token;
 }
 

@@ -26,6 +26,7 @@ bool SymbolTable::contains(string name){
 //clears the symboltable
 void SymbolTable::clear(){
     symbol_table.clear();
+    num_fields = 0;
 }
 
 //function for priting the symbol table, for debugging purposes

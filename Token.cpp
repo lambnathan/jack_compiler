@@ -30,7 +30,7 @@ string Token::to_string(){
             break;
         case string_constant:
             t = "stringConstant";
-            val = value.substr(1, value.length() - 2); //to remove quotes
+            //val = value.substr(1, value.length() - 2); //to remove quotes
             break;
         case identifier:
             t = "identifier";

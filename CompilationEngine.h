@@ -25,7 +25,8 @@ class CompilationEngine{
         //things needed for actual code generation
         SymbolTable global_table; //holds statics and fields. gets created fresh for every class/.jack file
         SymbolTable local_table; //holds all local variables. gets created fresh for every function
-        int class_offset = 0;
+        int static_offset = 0;
+        int field_offset = 0;
         int local_offset = 0;
         int arg_offset = 0;
         string current_class;

@@ -67,8 +67,14 @@ void CompilationEngine::compile(){
 
         fout.close();
         fin.close();
+
+        //reset variables before next file
         indents = 0; //reset the indent counter after done with file
-        ind = "";
+        ind = ""; //resets index string
+        static_offset = 0;
+        field_offset = 0;
+        local_offset = 0;
+        arg_offset = 0;
 
     }
 }
@@ -130,12 +136,13 @@ void CompilationEngine::compile_classVarDec(){
 
     //create new symbol record for the static/field variable
     if(static_or_field.value == "static"){
-        global_table.put(name, type, "static", class_offset);
+        global_table.put(name, type, "static", static_offset);
+        static_offset++;
     }
     else{
-        global_table.put(name, type, "this", class_offset);
+        global_table.put(name, type, "this", field_offset);
+        field_offset++;
     }
-    class_offset++;
 
     //now loop, outputting comma symbols and additional identifiers until able to output semicolon
     while(scanner.peek().value != ";"){
@@ -148,12 +155,13 @@ void CompilationEngine::compile_classVarDec(){
         Token next_var_name = scanner.next();
         //fout << ind << next_var_name.to_string() << endl;
         if(static_or_field.value == "static"){
-            global_table.put(next_var_name.value, type, "static", class_offset);
+            global_table.put(next_var_name.value, type, "static", static_offset);
+            static_offset++;
         }
         else{
-            global_table.put(next_var_name.value, type, "this", class_offset);
+            global_table.put(next_var_name.value, type, "this", field_offset);
+            field_offset++;
         }
-        class_offset++;
     }
     Token semicolon = scanner.next();
     //fout << ind << semicolon.to_string() << endl;
@@ -459,11 +467,10 @@ void CompilationEngine::compile_letStatement(){
 
     if(is_array_expression){
         //handles array assignment
-        fout << "push local 0" << endl;
-        fout << "push temp 0 " << endl;
-        fout << "add" << endl;
-        fout << "pop pointer 1" << endl;
-        fout << "pop that 0" << endl;
+        fout << "pop temp 0" << endl; //store result in temp
+        fout << "pop pointer 1" << endl; //get address pointer into pointer 1
+        fout << "push temp 0" << endl; //get result onto stack 
+        fout << "pop that 0" << endl; //store result 
     }
     else{
         string segment;
@@ -514,15 +521,16 @@ void CompilationEngine::compile_ifStatement(){
     //fout << ind << open_par.to_string() << endl;
     //now there should be an expression
     compile_expression();
-
-    fout << "not" << endl;
-    fout << "if-goto IF_FALSE_" << if_counter << endl;
-
     Token closing_par = scanner.next();
     if(closing_par.value != ")"){
         cerr << "Error. Expected a closing parenthesis for if statement. (ifStatement)" << endl;
         exit(-1);
     }
+    int counter = if_counter;
+    if_counter++;
+    fout << "not" << endl;
+    fout << "if-goto IF_FALSE_" << counter << endl;
+
     //fout << ind << closing_par.to_string() << endl;
     //now get brackets and statements
     Token open_braces = scanner.next();
@@ -534,8 +542,8 @@ void CompilationEngine::compile_ifStatement(){
     //statements are insdie curly braces
     compile_statements();
 
-    fout << "goto IF_END_" << if_counter << endl;
-    fout << "label IF_FALSE_" << if_counter << endl;
+    fout << "goto IF_END_" << counter << endl;
+    fout << "label IF_FALSE_" << counter << endl;
 
     Token closing_braces = scanner.next();
     if(closing_braces.value != "}"){
@@ -564,8 +572,8 @@ void CompilationEngine::compile_ifStatement(){
         //fout << ind << closing_braces.to_string() << endl;
     }
 
-    fout << "label IF_END_" << if_counter << endl;
-    if_counter++;
+    fout << "label IF_END_" << counter << endl;
+    //if_counter++;
 
     //write_close_tag("ifStatement");
 }
@@ -905,7 +913,7 @@ void CompilationEngine::compile_subroutineCall(){
         //fout << ind << dot.to_string() << endl;
         name = scanner.next();
         if(name.type != identifier){
-            cerr << "Error. Expected an identifier for subroutine name. (subroutine_call)" << endl;
+            cerr << "Error. Expected an identifier for subroutine name. got: " << name.value << " (subroutine_call)" << endl;
             exit(-1);
         }
         //fout << ind << name.to_string() << endl;
